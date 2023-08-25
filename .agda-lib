@@ -1,0 +1,4 @@
+name: KSReals
+depend:
+  agda2hs
+include: .
