@@ -22,13 +22,16 @@ data Frac (a : Set) {{semiring : SemiRing a}} : Set where
 zero ≢0 = ⊥
 _    ≢0 = ⊤
 
-data Rational : Set where
-  MkRational : (numerator : Int) (denominator : Nat) -> @0 {denominator ≢0} -> Rational
+Rational : Set
+Rational = Frac Int
 
 record AppRationals (aq : Set) : Set₁ where
   field
     overlap {{ring}} : Ring aq
     overlap {{tApart}} : TrivialApart aq
+    overlap {{pseudoOrder}} : PseudoOrder aq
 
     toRational : aq -> Rational
+    -- OrderEmbedding toRational
+    -- @0 toRational-strictOrderEmbedding : StrictOrderEmbedding toRational
     

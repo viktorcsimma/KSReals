@@ -19,14 +19,21 @@ open Setoid {{...}} public
 {-# COMPILE AGDA2HS Setoid class #-}
 
 -- Some other shortenings which depend on _≃_.
+
+@0 Irreflexive : {a : Set} -> {{Setoid a}} -> (a -> a -> Set) -> Set
+Irreflexive {a = a} r = ∀ {x y : a} -> x ≃ y -> r x y -> ⊥
+
+-- These _don't_ assume the respective functions are morphisms.
+@0 Injective : {a b : Set} -> {{Setoid a}} -> {{Setoid b}} -> (a -> b) -> Set
+Injective {a} f = ∀ (x y : a) -> f x ≃ f y -> x ≃ y
+
 @0 Associative : {a : Set} -> {{Setoid a}} -> (a -> a -> a) -> Set
-Associative {a} _#_ = ∀ {x y z : a} -> (x # y) # z ≃ x # (y # z)
+Associative {a} _#_ = ∀ (x y z : a) -> (x # y) # z ≃ x # (y # z)
 
 @0 Commutative : {a : Set} -> {{Setoid a}} -> (a -> a -> a) -> Set
-Commutative {a} _#_ = ∀ {x y : a} -> x # y ≃ y # x
+Commutative {a} _#_ = ∀ (x y : a) -> x # y ≃ y # x
 
--- We now follow the names in Coq.
--- Whether a function between two setoids is proper.
+-- Now morphism itself.
 @0 SetoidMorphism : {a b : Set} -> {{Setoid a}} -> {{Setoid b}}
                                    -> (a -> b) -> Set
 SetoidMorphism {a} f = ∀ (x y : a) -> x ≃ y -> f x ≃ f y

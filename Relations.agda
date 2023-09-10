@@ -3,9 +3,9 @@
 
 module Relations where
 
+open import Agda.Primitive
 open import Haskell.Prim.Tuple
 open import Haskell.Prim using (⊥)
-open import Haskell.Prim.Either
 
 -- Logical equivalence.
 infix 2 _↔_
@@ -13,21 +13,19 @@ _↔_ : Set -> Set -> Set
 a ↔ b = (a -> b) × (b -> a)
 {-# COMPILE AGDA2HS _↔_ #-}
 
-@0 Reflexive : {a : Set} -> (a -> a -> Set) -> Set
-Reflexive {a} r = ∀ {x : a} -> r x x
+-- An Either which can be used for any levels.
+data _⊎_ {i j} (a : Set i) (b : Set j) : Set (i ⊔ j) where
+  inl : a -> a ⊎ b
+  inr : b -> a ⊎ b
 
-@0 Irreflexive : {a : Set} -> (a -> a -> Set) -> Set
-Irreflexive {a} r = ∀ {x : a} -> r x x -> ⊥
+@0 Reflexive Transitive Cotransitive Symmetric Asymmetric :
+                    ∀ {i} {a : Set i} -> (a -> a -> Set i) -> Set i
 
-@0 Transitive : {a : Set} -> (a -> a -> Set) -> Set
-Transitive {a} r = ∀ {x y z : a} -> r x y -> r y z -> r x z
-
-@0 Cotransitive : {a : Set} -> (a -> a -> Set) -> Set
-Cotransitive {a} r = ∀ {x y : a} → r x y → ∀ (z : a) → Either (r x z) (r z y)
-
-@0 Symmetric : {a : Set} -> (a -> a -> Set) -> Set
-Symmetric {a} r = ∀ {x y : a} -> r x y -> r y x
-
+-- We follow the standard library by not using the equality at Reflexive,
+-- by using it at Irreflexive.
+Reflexive {a = a} r = ∀ {x : a} -> r x x
+Transitive {a = a} r = ∀ {x y z : a} -> r x y -> r y z -> r x z
+Cotransitive {a = a} r = ∀ {x y : a} → r x y → ∀ (z : a) → (r x z) ⊎ (r z y)
+Symmetric {a = a} r = ∀ {x y : a} -> r x y -> r y x
 -- In Coq, this is a strict asymmetric property. So they cannot even be equal.
-@0 Asymmetric : {a : Set} -> (a -> a -> Set) -> Set
-Asymmetric {a} r = ∀ {x y : a} -> r x y -> r y x -> ⊥
+Asymmetric {a = a} r = ∀ {x y : a} -> r x y -> r y x -> ⊥
