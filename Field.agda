@@ -22,6 +22,7 @@ record Field (a : Set) : Set₁ where
 open Field {{...}} public
 {-# COMPILE AGDA2HS Field class #-}
 
+{-
 -- DecField is a field in which the reciprocal function is total.
 record DecField (a : Set) : Set₁ where
   field
@@ -34,3 +35,4 @@ record DecField (a : Set) : Set₁ where
     @0 decRecipNull : decRecip null ≃ null
 open DecField {{...}} public
 {-# COMPILE AGDA2HS DecField #-}
+-}

@@ -88,13 +88,6 @@ private
   negsuc n * pos n₁ = intNegate (pos (suc n Agda.Builtin.Nat.* n₁))
   negsuc n * negsuc n₁ = pos (suc n Agda.Builtin.Nat.* suc n₁)
 
-  -- We'll need this for intShiftLInt later.
-  halveNat : Nat -> Nat
-  halveNat zero = zero
-  halveNat (suc zero) = zero
-  halveNat (suc (suc n)) = suc (halveNat n)
-  -- We won't compile this either.
-
   -- 0.5 will be rounded to 0;
   -- -0.5 to -1.
   -- So like in Python.

@@ -5,7 +5,7 @@ module Decidable where
 open import Agda.Builtin.Bool
 open import Agda.Builtin.Equality
 open import Haskell.Prim.Either
-open import Haskell.Prim using (IsTrue)
+open import Haskell.Prim using (IsTrue; if_then_else_)
 
 open import Setoid
 open import Relations
@@ -47,3 +47,9 @@ record DecLt (a : Set) : Set₁ where
     @0 <#-correct : DecidesBinary _<#_ _<_
 open DecLt {{...}} public
 {-# COMPILE AGDA2HS DecLt class #-}
+
+max min : ∀ {a : Set} {{declt : DecLt a}} -> a -> a -> a
+max x y = if x <# y then y else x
+min x y = if x <# y then x else y
+{-# COMPILE AGDA2HS max #-}
+{-# COMPILE AGDA2HS min #-}

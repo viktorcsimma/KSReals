@@ -10,6 +10,7 @@ module AppRationals where
 
 open import Agda.Builtin.Nat using (Nat; zero; suc)
 open import Agda.Builtin.Int using (Int; pos; negsuc)
+open import Haskell.Prim using (id; const)
 
 open import Cheat
 
@@ -20,6 +21,7 @@ open import Setoid
 open import Cast
 open import Rational
 open import Order
+open import Decidable
 open import Operations
 open import Nat
 open import Int
@@ -31,8 +33,11 @@ record AppRationals (aq : Set) : Set₁ where
     overlap {{ring}} : Ring aq
     overlap {{partialOrder}} : PartialOrder aq
     overlap {{pseudoOrder}} : PseudoOrder aq
+    overlap {{decLe}} : DecLe aq
+    overlap {{decLt}} : DecLt aq
     overlap {{strongSetoid}} : StrongSetoid aq
     overlap {{trivialApart}} : TrivialApart aq
+    overlap {{absAq}} : Abs aq
     overlap {{shiftL}} : ShiftL aq Int
     overlap {{natPow}} : Pow aq Nat
     overlap {{castAqRational}} : Cast aq Rational
@@ -50,10 +55,10 @@ record AppRationals (aq : Set) : Set₁ where
     -- The error is at most 2ᵏ.
     -- We stay with the concrete Int representation for now.
     -- And we don't require it to be nonzero.
-    appDiv : (x y : aq) -> Int -> @0 {NonZero y} -> aq
-    @0 appDivCorrect : ∀ (x y : aq) {NonZeroy : NonZero y} (k : Int)
+    appDiv : (x y : aq) -> @0 (NonZero y) -> Int -> aq
+    @0 appDivCorrect : ∀ (x y : aq) (NonZeroy : NonZero y) (k : Int)
                             -> ball (shiftl one k :&: cheat)   -- 2 ^ k
-                                    (cast {aq} {Rational} (appDiv x y k {NonZeroy}))
+                                    (cast {aq} {Rational} (appDiv x y NonZeroy k))
                                     (cast {aq} {Rational} x * recip (cast {aq} {Rational} y) (aqNonZeroToNonZero NonZeroy))
 
     -- A function "compressing" an AQ to a more easily representable AQ,
@@ -68,3 +73,26 @@ record AppRationals (aq : Set) : Set₁ where
 
 open AppRationals {{...}} public
 {-# COMPILE AGDA2HS AppRationals class #-}
+
+instance
+  appRationalsRational : AppRationals Rational
+  AppRationals.ring appRationalsRational = ringFrac
+  AppRationals.partialOrder appRationalsRational = partialOrderFrac
+  AppRationals.pseudoOrder appRationalsRational = pseudoOrderFrac
+  AppRationals.strongSetoid appRationalsRational = strongSetoidFrac
+  AppRationals.trivialApart appRationalsRational = trivialApartFrac
+  AppRationals.absAq appRationalsRational = absFrac
+  AppRationals.shiftL appRationalsRational = shiftLFrac
+  AppRationals.natPow appRationalsRational = natPowFrac
+  AppRationals.castAqRational appRationalsRational = castSame
+  AppRationals.castIntAq appRationalsRational = castFrac
+  AppRationals.aqToQOrderEmbed appRationalsRational = cheat
+  AppRationals.aqToQStrictOrderEmbed appRationalsRational = cheat
+  AppRationals.aqToQSemiRingMorphism appRationalsRational = cheat
+  AppRationals.aqNonZeroToNonZero appRationalsRational = id
+  AppRationals.appDiv appRationalsRational x y NonZeroy _ = x * recip y NonZeroy
+  AppRationals.appDivCorrect appRationalsRational = cheat
+  AppRationals.appApprox appRationalsRational = const
+  AppRationals.appApproxCorrect appRationalsRational = cheat
+  AppRationals.intToAqSemiRingMorphism appRationalsRational = cheat
+  {-# COMPILE AGDA2HS appRationalsRational #-}

@@ -189,6 +189,13 @@ instance
   Cast.cast (castFrac {a}) x = MkFrac x one (NonZeroOne {a})
   {-# COMPILE AGDA2HS castFrac #-}
 
+  natPowFrac : ∀ {a : Set} {{semiRing : SemiRing a}} {{natPow : Pow a Nat}} -> Pow (Frac a) Nat
+  (natPowFrac Pow.^ MkFrac numx denx denNotNullx) n = MkFrac (numx ^ n) (denx ^ n) cheat
+  Pow.powProper natPowFrac = cheat
+  Pow.powNull natPowFrac = cheat
+  Pow.powSuc natPowFrac = cheat
+  {-# COMPILE AGDA2HS natPowFrac #-}
+
   {-
   How can we assure that num x is not null?
   intPowFrac : ∀ {a : Set} {{semiRing : SemiRing a}} {{natPow : Pow a Nat}} -> Pow (Frac a) Int
@@ -221,6 +228,16 @@ Rational : Set
 Rational = Frac Int
 -- We won't compile this; we'll use Data.Ratio's Rational instead.
 
+-- This also rounds downwards.
+ratLog2Floor : (q : Rational) -> @0 {null < q} -> Int
+ratLog2Floor q = pos (Nat.natLog2Floor (natAbs (num q)) {cheat})
+                    + negate (pos (Nat.natLog2Floor (natAbs (den q)) {cheat}))
+                    + negsuc zero
+                    -- For now, let's be sure that it rounds the subtracted one upwards
+                    -- by subtracting one more.
+                    -- Maybe we should write a function for natLog2Ceil too.
+{-# COMPILE AGDA2HS ratLog2Floor #-}
+
 PosRational : Set
 PosRational = Σ0 Rational (λ q -> null < q)
 {-# COMPILE AGDA2HS PosRational #-}
@@ -235,6 +252,7 @@ halvePos : PosRational -> PosRational
 halvePos (p :&: 0<p) = shiftl p (negsuc 0) :&: cheat
 {-# COMPILE AGDA2HS halvePos #-}
 
+{-
 -- The rationals are "a field containing ℤ that moreover can be embedded
 -- into the field of fractions of ℤ".
 -- So the abstract type class is defined like this:
@@ -255,3 +273,4 @@ open Rationals {{...}} public
 class DecField a => Rationals a where
   rationalsToFrac :: Integers b => a -> Frac b
 #-}
+-}

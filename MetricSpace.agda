@@ -4,6 +4,7 @@ module MetricSpace where
 open import Cheat
 
 open import Haskell.Prim.Tuple
+open import Haskell.Prim using (if_then_else_)
 
 open import ErasureProduct
 open import Setoid
@@ -12,6 +13,7 @@ open import Int
 open import Rational
 open import Order
 open import Operations
+open import Decidable
 
 record MetricSpace (a : Set) : Set₁ where
   field
@@ -59,3 +61,12 @@ instance
   MetricSpace.ballClosed metricSpaceRational = cheat
   MetricSpace.ballEq metricSpaceRational = cheat
   {-# COMPILE AGDA2HS metricSpaceRational #-}
+
+  prelengthSpaceRational : PrelengthSpace Rational
+  PrelengthSpace.metricSpace prelengthSpaceRational = metricSpaceRational
+  PrelengthSpace.prelength prelengthSpaceRational
+                 ε δ₁ δ₂ x y ε<δ₁+δ₂ bεxy
+                    = if (x ≤# y)
+                       then x + proj₁ δ₁ :&: cheat
+                       else y + proj₁ δ₁ :&: cheat
+  {-# COMPILE AGDA2HS prelengthSpaceRational #-}

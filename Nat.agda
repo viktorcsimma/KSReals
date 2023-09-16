@@ -167,6 +167,36 @@ instance
     shiftl n k = 2 * shiftl n (k - 1)
   #-}
 
+-- This rounds downwards.
+halveNat : Nat -> Nat
+halveNat zero = zero
+halveNat (suc zero) = zero
+halveNat (suc (suc n)) = suc (halveNat n)
+{-# FOREIGN AGDA2HS
+halveNat :: Natural -> Natural
+halveNat x = div x 2
+#-}
+
+-- A function calculating log₂x rounded downwards.
+{-# TERMINATING #-}
+natLog2Floor : (n : Nat) -> @0 {NonZero n} -> Nat
+natLog2Floor (suc zero) = zero
+natLog2Floor n@(suc (suc _)) = suc (natLog2Floor (halveNat n))
+{-# FOREIGN AGDA2HS
+natLog2Floor :: Natural -> Natural
+natLog2Floor 0 = error "logarithm of 0 would be minus infinity"
+natLog2Floor 1 = 0
+natLog2Floor n = suc $ natLog2Floor $ div n 2
+#-}
+
+@0 natLog2FloorLowerBound : ∀ (x : Nat) {@0 x≢0 : NonZero x} ->
+                               2 ^ natLog2Floor x {x≢0} ≤ x
+natLog2FloorLowerBound = cheat
+
+@0 natLog2FloorGLB : ∀ (x : Nat) -> {@0 x≢0 : NonZero x} ->
+                            (∀ (k : Nat) -> 2 ^ k ≤ x -> k ≤ natLog2Floor x {x≢0})
+natLog2FloorGLB = cheat
+
 -- An initial object of a category C is an object I in C such that for every object X in C, there exists precisely one morphism I → X.
 -- This morphism is called the initial arrow.
 -- But I think we cannot really generalise this while preserving agda2hs compatibility.
