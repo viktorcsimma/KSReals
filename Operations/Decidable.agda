@@ -1,15 +1,15 @@
 -- Definitions and type classes about decidable propositions,
 -- equality, ordering etc.
-module Decidable where
+module Operations.Decidable where
 
 open import Agda.Builtin.Bool
 open import Agda.Builtin.Equality
 open import Haskell.Prim.Either
 open import Haskell.Prim using (IsTrue; if_then_else_)
 
-open import Setoid
-open import Relations
-open import Order
+open import Algebra.Setoid
+open import Tools.Relations
+open import Algebra.Order
 
 -- In order to make it compilable, we always define operators
 -- that return Bools; instead of using P ⊎ ¬ P.

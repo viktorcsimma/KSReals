@@ -1,12 +1,13 @@
 -- Instances for the builtin Int type.
-module Int where
+module Implementations.Int where
 
 {-# FOREIGN AGDA2HS
 {-# LANGUAGE MultiParamTypeClasses #-}
-import qualified Prelude
+-- import qualified Prelude
+import Numeric.Natural
 import Data.Bits (shift) #-}
 
-open import Cheat
+open import Tools.Cheat
 
 open import Agda.Builtin.Unit
 open import Agda.Builtin.Bool
@@ -18,14 +19,16 @@ open import Haskell.Prim using (⊥; _∘_; magic; ltNat; addNat; id; itsTrue)
 open import Haskell.Prim.Tuple
 open import Haskell.Prim.Integer using (IsNonNegativeInteger)
 
-open import PropositionalEquality
-open import Setoid
-open import Decidable
-import Ring
-open Ring hiding (_+_; _*_)
-open import Nat
-open import Order
-open import Operations
+open import Tools.PropositionalEquality
+open import Algebra.Setoid
+open import Operations.Decidable
+import Algebra.Ring
+open Algebra.Ring hiding (_+_; _*_)
+open import Implementations.Nat
+open import Algebra.Order
+open import Operations.Abs
+open import Operations.ShiftL
+open import Operations.Pow
 
 -- Here, the operators are not pre-defined;
 -- so we have to copy them from the standard library.
@@ -99,15 +102,18 @@ private
   pos zero ≢+0 = ⊥
   _        ≢+0 = ⊤
 
-infixl 7 _intDiv_
 -- Now this has to be public.
-_intDiv_ : (x y : Int) -> @0 {y ≢+0} -> Int
-_intDiv_ (pos m) (pos (suc n)) = pos (m natDiv (suc n))
-_intDiv_ (pos m) (negsuc n) = intNegate (pos (m natDiv suc n))
-_intDiv_ (negsuc m) (pos (suc n)) = intNegate (pos (suc m natDiv suc n))
-_intDiv_ (negsuc m) (negsuc n) = pos (suc m natDiv suc n)
+intDiv : (x y : Int) -> @0 {y ≢+0} -> Int
+intDiv (pos m) (pos (suc n)) = pos (natDiv m (suc n))
+intDiv (pos m) (negsuc n) = intNegate (pos (natDiv m (suc n)))
+intDiv (negsuc m) (pos (suc n)) = intNegate (pos (natDiv (suc m) (suc n)))
+intDiv (negsuc m) (negsuc n) = pos (natDiv (suc m) (suc n))
 -- And we will use `quot` in Haskell (this rounds towards zero).
 -- (`div` would be uglier now.)
+{-# FOREIGN AGDA2HS
+intDiv :: Integer -> Integer -> Integer
+intDiv = Prelude.quot
+#-}
 
 natAbs : Int -> Nat
 natAbs (pos n) = n

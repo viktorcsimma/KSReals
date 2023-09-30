@@ -1,11 +1,11 @@
 -- A definition of closed intervals on ordered sets
 -- and a way to convert them to predicates.
-module Interval where
+module RealTheory.Interval where
 
 open import Agda.Builtin.Unit
 open import Haskell.Prim.Tuple
 
-open import Order
+open import Algebra.Order
 
 data Interval (a : Set) {{le : Le a}} : Set where
   [_,_] : a -> a -> Interval a

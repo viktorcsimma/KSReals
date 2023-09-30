@@ -1,14 +1,14 @@
 -- Classes and predicates related to ordering.
-module Order where
+module Algebra.Order where
 
 open import Haskell.Prim.Either
 open import Haskell.Prim using (⊥)
 open import Haskell.Prim.Tuple
 
-open import ErasureProduct
-open import Relations
-open import Setoid
-open import Ring
+open import Tools.ErasureProduct
+open import Tools.Relations
+open import Algebra.Setoid
+open import Algebra.Ring
 
 -- A set of which we only know it has a _<_ operator.
 -- We need this because we have classes about it that only partially overlap.

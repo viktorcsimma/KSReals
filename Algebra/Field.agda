@@ -1,10 +1,10 @@
 -- The Field and DecField classes.
-module Field where
+module Algebra.Field where
 
 open import Haskell.Prim using (⊥)
 
-open import Setoid
-open import Ring
+open import Algebra.Setoid
+open import Algebra.Ring
 
 record Field (a : Set) : Set₁ where
   field

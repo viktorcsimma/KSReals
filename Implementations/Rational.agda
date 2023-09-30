@@ -1,10 +1,10 @@
 -- An implementation of fractions of semirings
 -- and the rationals.
-module Rational where
+module Implementations.Rational where
 
 {-# FOREIGN AGDA2HS {-# LANGUAGE MultiParamTypeClasses #-} #-}
 
-open import Cheat
+open import Tools.Cheat
 
 open import Agda.Builtin.Equality
 open import Agda.Builtin.Nat using (Nat; zero; suc)
@@ -12,17 +12,19 @@ open import Agda.Builtin.Int using (Int; pos; negsuc)
 open import Haskell.Prim using (⊥; id)
 open import Haskell.Prim.Tuple
 
-open import ErasureProduct
-open import PropositionalEquality
-import Nat
-open import Int
-open import Setoid
-open import Ring
-open import Field
-open import Order
-open import Decidable
-open import Operations
-open import Cast
+open import Tools.ErasureProduct
+open import Tools.PropositionalEquality
+import Implementations.Nat as Nat
+open import Implementations.Int
+open import Algebra.Setoid
+open import Algebra.Ring
+open import Algebra.Field
+open import Algebra.Order
+open import Operations.Decidable
+open import Operations.Abs
+open import Operations.Cast
+open import Operations.ShiftL
+open import Operations.Pow
 
 -- Since we don't use classes below SemiRing to maintain
 -- Haskell compatibility (by avoiding to give operators as parameters);
@@ -227,6 +229,8 @@ instance
 Rational : Set
 Rational = Frac Int
 -- We won't compile this; we'll use Data.Ratio's Rational instead.
+-- Or can we? We haven't written the instances for it...
+{-# COMPILE AGDA2HS Rational #-}
 
 -- This also rounds downwards.
 ratLog2Floor : (q : Rational) -> @0 {null < q} -> Int

@@ -1,7 +1,7 @@
 -- Some useful properties of relations
 -- and propositions.
 
-module Relations where
+module Tools.Relations where
 
 open import Agda.Primitive
 open import Haskell.Prim.Tuple

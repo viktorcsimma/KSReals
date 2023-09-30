@@ -1,12 +1,12 @@
 -- A definiton for uniform continuity.
-module Continuity where
+module RealTheory.Continuity where
 
 open import Agda.Builtin.Unit
 
-open import Order
-open import MetricSpace
-open import Rational
-open import ErasureProduct
+open import Algebra.Order
+open import Algebra.MetricSpace
+open import Implementations.Rational
+open import Tools.ErasureProduct
 
 {-
 -- Actually, we don't need subsets here.

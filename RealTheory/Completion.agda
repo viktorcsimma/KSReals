@@ -1,6 +1,6 @@
 -- The definition of the completion monad.
 -- This makes a prelength space Cauchy complete.
-module Complete where
+module RealTheory.Completion where
 
 open import Agda.Builtin.Unit
 open import Agda.Builtin.Int using (Int; pos; negsuc)
@@ -11,18 +11,17 @@ open Do -- we want agda2hs to use do-notation
 open import Haskell.Prim.Tuple
 open import Haskell.Prim using (_∘_; const; id)
 
-open import Cheat
+open import Tools.Cheat
 
-open import ErasureProduct
-open import Setoid
-open import Ring
-open import Order
-open import Int
-open import Rational
-open import MetricSpace
-open import Continuity
-open import Operations
-open import Interval
+open import Tools.ErasureProduct
+open import Algebra.Setoid
+open import Algebra.Ring
+open import Algebra.Order
+open import Implementations.Int
+open import Implementations.Rational
+open import Algebra.MetricSpace
+open import RealTheory.Continuity
+open import RealTheory.Interval
 
 -- The problem is that we cannot include the condition in the type.
 -- That's because the Functor, Monad etc. instances all expect a Set -> Set,
@@ -135,7 +134,7 @@ instance
                {@0 I : Interval a}
                -> PrelengthSpace (Σ0 a (IsIn I))
   PrelengthSpace.metricSpace prelengthInterval = metricΣ0
-  PrelengthSpace.prelength (prelengthInterval {a}) ε δ₁ δ₂ sx@(x :&: _) sy@(y :&: _)
+  PrelengthSpace.prelength (prelengthInterval {a}) ε δ₁ δ₂ (x :&: _) (y :&: _)
                                          ε<δ₁+δ₂
                                          bεxy
                                          -- hm... is this actually true?

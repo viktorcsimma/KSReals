@@ -1,5 +1,5 @@
 -- Instances for the builtin Nat type.
-module Nat where
+module Implementations.Nat where
 
 open import Agda.Builtin.Unit
 open import Agda.Builtin.Nat hiding (_<_) -- that's built in for Nat, but is a Boolean operator
@@ -9,24 +9,32 @@ open import Haskell.Prim using (⊥; IsTrue; id; magic)
 
 {-# FOREIGN AGDA2HS {-# LANGUAGE MultiParamTypeClasses #-} #-}
 
-open import Cheat
+open import Tools.Cheat
 
-open import PropositionalEquality
-open import Setoid
-open import Decidable
-import Ring
-open Ring hiding (_+_; _*_) -- here we use the Nat ones by default
-open import Order
-open import Operations
+open import Tools.PropositionalEquality
+open import Algebra.Setoid
+open import Operations.Decidable
+import Algebra.Ring
+open Algebra.Ring hiding (_+_; _*_) -- here we use the Nat ones by default
+open import Algebra.Order
+open import Operations.Pow
+open import Operations.ShiftL
 
 @0 _≢0 : Nat -> Set
 zero ≢0 = ⊥
 _    ≢0 = ⊤
 
-infixl 7 _natDiv_
-_natDiv_ : (m n : Nat) -> @0 {n ≢0} -> Nat
-m natDiv (suc n) = div-helper 0 n m n
+natDiv natMod : (m n : Nat) -> @0 {n ≢0} -> Nat
+natDiv m (suc n) = div-helper 0 n m n
 -- We'll use `div` instead of this.
+natMod m (suc n) = mod-helper 0 n m n
+-- And here `mod`.
+{-# FOREIGN AGDA2HS
+natDiv :: Natural -> Natural -> Natural
+natDiv = Prelude.div
+natMod :: Natural -> Natural -> Natural
+natMod = Prelude.mod
+#-}
 
 instance
   setoidNat : Setoid Nat
@@ -223,7 +231,7 @@ class SemiRing a => Naturals a where
   naturalsToSemiRing :: SemiRing b => a -> b
 #-}
 
-open import Cheat
+open import Tools.Cheat
 
 instance
   naturalsNat : Naturals Nat

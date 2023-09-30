@@ -6,27 +6,29 @@
 -- The completion of a type with this class
 -- will give the real numbers.
 
-module AppRationals where
+module RealTheory.AppRationals where
 
 open import Agda.Builtin.Nat using (Nat; zero; suc)
 open import Agda.Builtin.Int using (Int; pos; negsuc)
 open import Haskell.Prim using (id; const)
 
-open import Cheat
+open import Tools.Cheat
 
-open import ErasureProduct
-open import Ring
-open import Field
-open import Setoid
-open import Cast
-open import Rational
-open import Order
-open import Decidable
-open import Operations
-open import Nat
-open import Int
-open import MetricSpace
-open import Cast
+open import Tools.ErasureProduct
+open import Algebra.Ring
+open import Algebra.Field
+open import Algebra.Setoid
+open import Operations.Cast
+open import Implementations.Rational
+open import Algebra.Order
+open import Operations.Decidable
+open import Operations.Abs
+open import Operations.ShiftL
+open import Operations.Pow
+open import Implementations.Nat
+open import Implementations.Int
+open import Algebra.MetricSpace
+open import Operations.Cast
 
 record AppRationals (aq : Set) : Set₁ where
   field

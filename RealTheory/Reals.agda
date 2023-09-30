@@ -1,6 +1,6 @@
 -- Some common operations on real number types
 -- (AppRationals types in the C monad).
-module Reals where
+module RealTheory.Reals where
 
 open import Agda.Builtin.Equality
 open import Agda.Builtin.Unit
@@ -10,24 +10,25 @@ open import Agda.Builtin.Int using (Int; pos; negsuc)
 open import Haskell.Prim using (_∘_; id; itsTrue; if_then_else_)
 open import Haskell.Prim.Either
 
-open import Cheat
+open import Tools.Cheat
 
-open import ErasureProduct
-open import Setoid
-open import Nat
-open import Int
-open import Rational
-open import AppRationals
-open import MetricSpace
-open import Continuity
-open import Ring
-open import Field
-open import Order
-open import Decidable
-open import Operations
-open import Cast
-open import Complete
-open import Interval
+open import Tools.ErasureProduct
+open import Algebra.Setoid
+open import Implementations.Nat
+open import Implementations.Int
+open import Implementations.Rational
+open import RealTheory.AppRationals
+open import Algebra.MetricSpace
+open import RealTheory.Continuity
+open import Algebra.Ring
+open import Algebra.Field
+open import Algebra.Order
+open import Operations.Decidable
+open import Operations.Abs
+open import Operations.Cast
+open import Operations.ShiftL
+open import RealTheory.Completion
+open import RealTheory.Interval
 
 -- First, the compress function.
 -- This creates a real number equal to the original one,
@@ -106,6 +107,23 @@ minR {a} x y = map2 ((λ x -> second x) :^: WrapMod id cheat) (compress x) (comp
   second x = (λ y -> min x y) :^: WrapMod id cheat
 {-# COMPILE AGDA2HS minR #-}
 
+private
+  -- We'll use this for multiplication;
+  -- but have to define it separately
+  -- because of dirty pattern matchings.
+  recipabs : Rational -> Rational
+  -- ∣x∣⁻¹ if a is not null; otherwise any modulus (let's say one)
+  recipabs (MkFrac (pos zero) den₁ denNotNull₁) = one
+  recipabs (MkFrac (pos (suc n)) den₁ denNotNull₁)
+           = MkFrac (abs den₁) (pos (suc n)) tt
+  recipabs (MkFrac (negsuc n) den₁ denNotNull₁)
+           = MkFrac (abs den₁) (pos (suc n)) tt
+  {-# FOREIGN AGDA2HS
+  recipabs :: Rational -> Rational
+  recipabs (MkFrac 0 _) = MkFrac 1 1
+  recipabs (MkFrac n d) = MkFrac (abs n) (abs d)
+  #-}
+
 instance
   -- We'll use this in NonZero.
   ltReals : ∀ {a : Set} {{ara : AppRationals a}} {{pra : PrelengthSpace a}}
@@ -131,7 +149,7 @@ instance
                                  = plusR
   -- Now, we have to find a rational c such that y ∈ [-c,c].
   SemiRing._*_ (semiRingReals {a}) x y = let cx = compress x; cy = compress y in
-                            map2 {{prb = prelengthInterval {a} {I}}} ((λ a -> second a)
+                            map2 {{prb = prelengthInterval {a} {I}}} ((λ a -> secondFun a)
                                    :^: WrapMod (λ ε -> proj₁ ε * recip (cast c) cheat :&: cheat) cheat) cx
      -- This simply converts cy to the Σ0 version.
      (MkC (λ ε -> fun cy ε :&: cheat) cheat)
@@ -140,18 +158,9 @@ instance
     c = abs (fun (compress y) (one :&: itsTrue)) + one
     @0 I : Interval a
     I = [ negate c , c ]
-    second : (x : a) -> UcFun (Σ0 a (IsIn I)) a
-    second x = (λ (y :&: _) -> x * y) :^: WrapMod (λ (ε :&: _) -> ε * recipabs x
+    secondFun : (x : a) -> UcFun (Σ0 a (IsIn I)) a
+    secondFun x = (λ sy -> x * proj₁ sy) :^: WrapMod (λ ε -> proj₁ ε * recipabs (cast x)
                                      :&: cheat) cheat
-      where
-      recipabs : a -> Rational
-      -- ∣x∣⁻¹ if a is not null; otherwise any modulus
-      recipabs x with cast {a} {Rational} x
-      ... | MkFrac (pos zero) den₁ denNotNull₁ = one
-      ... | MkFrac (pos (suc n)) den₁ denNotNull₁
-               = MkFrac (abs den₁) (pos (suc n)) tt
-      ... | MkFrac (negsuc n) den₁ denNotNull₁
-               = MkFrac (abs den₁) (pos (suc n)) tt
   SemiRing.+-proper semiRingReals = cheat
   SemiRing.+-assoc semiRingReals = cheat
   SemiRing.*-proper semiRingReals = cheat
@@ -206,10 +215,10 @@ NonZeroRT x = Either (PosRT x) (PosRT (negate x))
 {-# COMPILE AGDA2HS NonZeroRT #-}
 
 -- A _<_ based on that.
-ltT : ∀ {@0 a : Set} {{@0 ara : AppRationals a}} {{@0 pra : PrelengthSpace a}}
+LtT : ∀ {@0 a : Set} {{@0 ara : AppRationals a}} {{@0 pra : PrelengthSpace a}}
                       -> @0 C a -> @0 C a -> Set
-ltT x y = PosRT (y + negate x)
-{-# COMPILE AGDA2HS ltT #-}
+LtT x y = PosRT (y + negate x)
+{-# COMPILE AGDA2HS LtT #-}
 
 -- Creating a non-erased natural existence proof from an erased one
 -- (essentially, calculating a witness)
@@ -217,20 +226,26 @@ ltT x y = PosRT (y + negate x)
 -- This is needed for the inverse.
 -- I don't yet know how we could prove the termination of this.
 {-# TERMINATING #-}
-witness : ∀ (P : Nat -> Bool) (@0 erasedProof : Σ0 Nat (λ n -> P n ≡ true))
-                -> Σ0 Nat (λ n -> P n ≡ true)
-witness P (n :&: hyp) = go 0 n
+witness : ∀ (p : Nat -> Bool) (@0 erasedProof : Σ0 Nat (λ n -> p n ≡ true))
+                -> Σ0 Nat (λ n -> p n ≡ true)
+witness p (n :&: hyp) = go 0 n
   where
   -- Could we use this to prove termination somehow?
   @0 pred : Nat -> Nat
   pred zero = zero
   pred (suc n) = n
   
-  go : Nat -> @0 Nat -> Σ0 Nat (λ n -> P n ≡ true)
-  go n n0 with P n in eq
+  go : Nat -> @0 Nat -> Σ0 Nat (λ n -> p n ≡ true)
+  go n n0 with p n in eq
   ... | true = n :&: eq
   ... | false = go (suc n) (pred n0)
-{-# COMPILE AGDA2HS witness #-}
+-- Tried it with if-then-else, but then it got stuck at the next one.
+{-# FOREIGN AGDA2HS
+witness :: (Natural -> Bool) -> Σ0 Natural
+withness p = go 0
+  where
+  go n = if (p n) then n else (go (n + 1))
+#-}
 
 witnessForPos : ∀ {a : Set} {{ara : AppRationals a}} {{pra : PrelengthSpace a}}
                      -> (x : C a) -> @0 (PosR x) -> PosRT x
@@ -255,9 +270,10 @@ witnessForNonZero x hyp = sol
   ε = proj₁ εPack
   -- We check if it's good for x; if not, it will be good for negate x.
   sol : NonZeroRT x
-  sol with proj₁ ε <# cast (fun x ε) in eq
+  sol = if (proj₁ ε <# cast (fun x ε)) then Left (ε :&: cheat) else Right (ε :&: cheat)
+  {-with proj₁ ε <# cast (fun x ε) in eq
   ... | true = Left (ε :&: cheat)
-  ... | false = Right (ε :&: cheat)
+  ... | false = Right (ε :&: cheat)-}
 {-# COMPILE AGDA2HS witnessForNonZero #-}
 
 instance
@@ -274,20 +290,21 @@ instance
     where
     tPack : NonZeroRT x
     tPack = witnessForNonZero x hyp
-    isPositive : Bool
-    isPositive with tPack
-    ... | Left _ = true
-    ... | Right _ = false
+    isPositive : {@0 x : C a} -> NonZeroRT x -> Bool
+    isPositive (Left _) = true
+    isPositive (Right _) = false
+    extractWitness : {@0 x : C a} -> NonZeroRT x -> PosRational
+    extractWitness (Left (tpos :&: _)) = tpos
+    extractWitness (Right (tpos :&: _)) = tpos
     t : PosRational
-    t with tPack
-    ... | Left (tpos :&: _) = tpos
-    ... | Right (tpos :&: _) = tpos
+    t = extractWitness {x} tPack
     @0 I : Interval Rational
-    I = if isPositive then [ proj₁ t ,+∞[ else ]-∞, negate (proj₁ t) ]
+    I = if (isPositive {x} tPack) then [ proj₁ t ,+∞[ else ]-∞, negate (proj₁ t) ]
     @0 INonZero : ∀ {q : Rational} -> IsIn I q -> NonZero q
     INonZero = cheat
     toLift : UcFun (Σ0 a (λ x -> IsIn I (cast x))) (C a)
-    toLift = (λ (x :&: hyp) -> MkC (λ ε -> appDiv one x cheat (ratLog2Floor (proj₁ ε) {proj₂ ε})) cheat) :^: WrapMod (λ _ -> t) cheat
+    toLift = (λ sx -> let x = proj₁ sx in
+                   MkC (λ ε -> appDiv one x cheat (ratLog2Floor (proj₁ ε) {proj₂ ε})) cheat) :^: WrapMod (λ _ -> t) cheat
   Field.recip-proper fieldReals = cheat
   Field.*-inverseˡ fieldReals = cheat
   Field.*-inverseʳ fieldReals = cheat

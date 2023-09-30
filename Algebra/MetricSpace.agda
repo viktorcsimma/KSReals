@@ -1,19 +1,19 @@
 -- Definition of metric and prelength spaces.
-module MetricSpace where
+module Algebra.MetricSpace where
 
-open import Cheat
+open import Tools.Cheat
 
 open import Haskell.Prim.Tuple
 open import Haskell.Prim using (if_then_else_)
 
-open import ErasureProduct
-open import Setoid
-open import Ring
-open import Int
-open import Rational
-open import Order
-open import Operations
-open import Decidable
+open import Tools.ErasureProduct
+open import Algebra.Setoid
+open import Algebra.Ring
+open import Implementations.Int
+open import Implementations.Rational
+open import Algebra.Order
+open import Operations.Abs
+open import Operations.Decidable
 
 record MetricSpace (a : Set) : Set₁ where
   field

@@ -1,5 +1,5 @@
 -- The SemiRing and Ring classes.
-module Ring where
+module Algebra.Ring where
 
 open import Agda.Builtin.Unit
 open import Agda.Builtin.FromNat
@@ -7,8 +7,8 @@ open import Agda.Builtin.Nat using (zero; suc)
 open import Agda.Builtin.Int using (pos; negsuc)
 open import Haskell.Prim using (⊥)
 
-open import Relations
-open import Setoid
+open import Tools.Relations
+open import Algebra.Setoid
 
 -- The trick is that
 -- we list the criteria directly for _+_ and _*_
@@ -98,17 +98,12 @@ x - y = x + negate y
 {-# COMPILE AGDA2HS _-_ #-}
 -}
 
--- A way to convert these to standard Haskell type classes.
-instance
-  semiRingIsNumber : ∀ {a : Set} -> {{SemiRing a}} -> Number a
-  semiRingIsNumber .Number.Constraint _ = ⊤
-  semiRingIsNumber .fromNat zero = null
-  semiRingIsNumber .fromNat (suc n) = one + fromNat n
+-- A way to convert these to standard Haskell type classes?
 
-  -- I don't know whether we can deduce Num from SemiRing;
-  -- I think not, at least not meaningfully.
+-- I don't know whether we can deduce Num from SemiRing;
+-- I think not, at least not meaningfully.
 
-  -- But even Ring is not enough; since we would also need a decidable ordering
-  -- which we usually don't have. Hm.
-  -- And what if we only did that for decidable ordering
-  -- _and_ then for the completion monad?
+-- But even Ring is not enough; since we would also need a decidable ordering
+-- which we usually don't have. Hm.
+-- And what if we only did that for decidable ordering
+-- _and_ then for the completion monad?

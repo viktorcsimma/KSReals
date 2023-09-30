@@ -1,10 +1,10 @@
 -- Some properties of _≡_ we don't want to import from the standard library.
 -- Copied from Relation/Binary/PropositionalEquality/Core.agda.
-module PropositionalEquality where
+module Tools.PropositionalEquality where
 
 open import Agda.Builtin.Equality
 
-open import Relations
+open import Tools.Relations
 
 @0 cong : ∀ {i} {a b : Set i} (f : a -> b) {x y : a} → x ≡ y → f x ≡ f y
 cong f refl = refl 

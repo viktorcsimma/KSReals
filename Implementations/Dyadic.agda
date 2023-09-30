@@ -1,7 +1,7 @@
 -- A concrete implementation of dyadic numbers
 -- and a proof that they are good for AppRationals.
 
-module Dyadic where
+module Implementations.Dyadic where
 
 open import Agda.Builtin.Unit
 open import Agda.Builtin.Bool
@@ -11,20 +11,22 @@ open import Agda.Builtin.Int using (Int; pos; negsuc)
 open import Haskell.Prim.Tuple
 open import Haskell.Prim using (id; if_then_else_)
 
-open import Cheat
+open import Tools.Cheat
 
-open import Nat
-open import Int
-open import Rational
-open import Setoid
-open import Ring
-open import Operations
-open import Cast
-open import Decidable
-open import Order
-open import AppRationals
-open import MetricSpace
-open import ErasureProduct
+open import Implementations.Nat
+open import Implementations.Int
+open import Implementations.Rational
+open import Algebra.Setoid
+open import Algebra.Ring
+open import Operations.Abs
+open import Operations.Cast
+open import Operations.ShiftL
+open import Operations.Pow
+open import Operations.Decidable
+open import Algebra.Order
+open import RealTheory.AppRationals
+open import Algebra.MetricSpace
+open import Tools.ErasureProduct
 
 -- For the sake of simplicity, we now use the concrete Int type.
 -- It can be interpreted as mant * 2 ^ expo.
@@ -161,6 +163,13 @@ instance
   Cast.cast castIntDyadic k = k :|^ null
   {-# COMPILE AGDA2HS castIntDyadic #-}
 
+  absDyadic : Abs Dyadic
+  Abs.ring absDyadic = ringDyadic
+  Abs.le absDyadic = leDyadic
+  Abs.abs absDyadic x = abs (mant x) :|^ expo x
+  Abs.absCorrect absDyadic x = cheat , cheat
+  {-# COMPILE AGDA2HS absDyadic #-}
+
   -- And now...
   appRationalsDyadic : AppRationals Dyadic
   AppRationals.ring appRationalsDyadic = ringDyadic
@@ -188,14 +197,14 @@ instance
   -- https://github.com/coq-community/corn/blob/c08a0418f97a04ea7a6cdc3a930561cc8fc84d82/reals/faster/ARbigD.v#L265
   -- (shiftl (mant x) (-(k-1) + expo x - expo y)) `quot` mant y
   --      :|^ (k - 1)
-  AppRationals.appDiv appRationalsDyadic x y (pos zero) {NonZeroy}
-      = (shiftl (mant x) (pos 1 + expo x + negate (expo y)) intDiv (mant y)) {NonZeroy} :|^ (negsuc zero)
-  AppRationals.appDiv appRationalsDyadic x y (pos (suc zero)) {NonZeroy}
-      = (shiftl (mant x) (expo x + negate (expo y)) intDiv mant y) {NonZeroy} :|^ pos zero
-  AppRationals.appDiv appRationalsDyadic x y (pos (suc (suc k))) {NonZeroy}
-      = (shiftl (mant x) (negsuc k + expo x + negate (expo y)) intDiv mant y) {NonZeroy} :|^ pos (suc k)
-  AppRationals.appDiv appRationalsDyadic x y (negsuc k) {NonZeroy}
-      = (shiftl (mant x) (pos (suc (suc k)) + expo x + negate (expo y)) intDiv mant y) {NonZeroy} :|^ negsuc (suc k)
+  AppRationals.appDiv appRationalsDyadic x y NonZeroy (pos zero)
+      = (intDiv (shiftl (mant x) (pos 1 + expo x + negate (expo y))) (mant y)) {NonZeroy} :|^ (negsuc zero)
+  AppRationals.appDiv appRationalsDyadic x y NonZeroy (pos (suc zero))
+      = (intDiv (shiftl (mant x) (expo x + negate (expo y))) (mant y)) {NonZeroy} :|^ pos zero
+  AppRationals.appDiv appRationalsDyadic x y NonZeroy (pos (suc (suc k)))
+      = (intDiv (shiftl (mant x) (negsuc k + expo x + negate (expo y))) (mant y)) {NonZeroy} :|^ pos (suc k)
+  AppRationals.appDiv appRationalsDyadic x y NonZeroy (negsuc k)
+      = (intDiv (shiftl (mant x) (pos (suc (suc k)) + expo x + negate (expo y))) (mant y)) {NonZeroy} :|^ negsuc (suc k)
   AppRationals.appDivCorrect appRationalsDyadic = cheat
 
   -- shiftl (mant x) (-(k - 1) + expo x) :|^ (k - 1)

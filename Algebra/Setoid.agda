@@ -1,12 +1,12 @@
 -- The Setoid and StrongSetoid classes
 -- and some useful properties of functions on them.
-module Setoid where
+module Algebra.Setoid where
 
 open import Haskell.Prim using (⊥)
 open import Haskell.Prim.Tuple
 open import Haskell.Prim.Either
 
-open import Relations
+open import Tools.Relations
 
 record Setoid (a : Set) : Set₁ where
   infix 3 _≃_

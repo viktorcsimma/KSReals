@@ -1,7 +1,7 @@
 -- Custom product types with various forms of erasure.
 
 -- {-# OPTIONS --without-K --safe #-}    commented out for agda2hs
-module ErasureProduct where
+module Tools.ErasureProduct where
 
 open import Agda.Primitive
 

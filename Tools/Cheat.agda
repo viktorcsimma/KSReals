@@ -5,6 +5,6 @@
 -- But it cannot affect computational results;
 -- since it is erased.
 
-module Cheat where
+module Tools.Cheat where
 
 postulate @0 cheat : ∀ {i} {a : Set i} -> a
