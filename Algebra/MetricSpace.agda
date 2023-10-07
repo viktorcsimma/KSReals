@@ -1,6 +1,13 @@
 -- Definition of metric and prelength spaces.
 module Algebra.MetricSpace where
 
+{-# FOREIGN AGDA2HS
+import qualified Prelude
+import Prelude (Integer)
+
+import Implementations.Rational
+#-}
+
 open import Tools.Cheat
 
 open import Haskell.Prim.Tuple

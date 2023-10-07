@@ -2,7 +2,17 @@
 -- and the rationals.
 module Implementations.Rational where
 
-{-# FOREIGN AGDA2HS {-# LANGUAGE MultiParamTypeClasses #-} #-}
+{-# FOREIGN AGDA2HS {-# LANGUAGE MultiParamTypeClasses #-}
+
+import qualified Prelude
+import Prelude (Integer, Bool, otherwise)
+
+import Algebra.Field
+import Operations.Cast
+import Implementations.Nat
+import Implementations.Int
+
+#-}
 
 open import Tools.Cheat
 
@@ -221,8 +231,8 @@ instance
   {-# FOREIGN AGDA2HS
   instance ShiftL a Nat => ShiftL (Frac a) Int where
     shiftl x n
-      | n >= 0     = MkFrac (shiftl (num x) n) (den x)
-      | otherwise  = MkFrac (num x) (shiftl (den x) (negate n))
+      | n Prelude.>= 0     = MkFrac (shiftl (num x) (natAbs n)) (den x)
+      | otherwise          = MkFrac (num x) (shiftl (den x) (natAbs (negate n)))
   #-}
 
 -- Rational will be an alias for Frac Int.
@@ -230,16 +240,13 @@ Rational : Set
 Rational = Frac Int
 -- We won't compile this; we'll use Data.Ratio's Rational instead.
 -- Or can we? We haven't written the instances for it...
+-- But Data.Ratio would mean a performance boost.
 {-# COMPILE AGDA2HS Rational #-}
 
 -- This also rounds downwards.
 ratLog2Floor : (q : Rational) -> @0 {null < q} -> Int
 ratLog2Floor q = pos (Nat.natLog2Floor (natAbs (num q)) {cheat})
                     + negate (pos (Nat.natLog2Floor (natAbs (den q)) {cheat}))
-                    + negsuc zero
-                    -- For now, let's be sure that it rounds the subtracted one upwards
-                    -- by subtracting one more.
-                    -- Maybe we should write a function for natLog2Ceil too.
 {-# COMPILE AGDA2HS ratLog2Floor #-}
 
 PosRational : Set
@@ -253,7 +260,7 @@ multPos (p :&: 0<p) (q :&: 0<q) = (p * q) :&: cheat
 {-# COMPILE AGDA2HS plusPos #-}
 {-# COMPILE AGDA2HS multPos #-}
 halvePos : PosRational -> PosRational
-halvePos (p :&: 0<p) = shiftl p (negsuc 0) :&: cheat
+halvePos (p :&: 0<p) = shiftl p (toInt (negsuc 0)) :&: cheat
 {-# COMPILE AGDA2HS halvePos #-}
 
 {-

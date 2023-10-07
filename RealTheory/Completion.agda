@@ -2,6 +2,13 @@
 -- This makes a prelength space Cauchy complete.
 module RealTheory.Completion where
 
+{-# FOREIGN AGDA2HS
+import qualified Prelude
+import Prelude (Integer, const, (.))
+
+import Implementations.Int
+#-}
+
 open import Agda.Builtin.Unit
 open import Agda.Builtin.Int using (Int; pos; negsuc)
 open import Haskell.Prim.Functor
@@ -145,7 +152,7 @@ instance
     where
     prelengthPack : Σ0 a (λ z -> ball δ₁ x z × ball δ₂ z y)
     prelengthPack = prelength ε δ₁ δ₂ x y ε<δ₁+δ₂ bεxy
-  {-# COMPILE AGDA2HS prelengthInterval #-}
+  -- {-# COMPILE AGDA2HS prelengthInterval #-}     -- GHC sees it as a duplicate
 
 join : ∀ {a : Set} {{metric : MetricSpace a}} -> C (C a) -> C a
 join x = MkC (λ ε -> fun (fun x (halvePos ε)) (halvePos ε)) cheat
@@ -153,7 +160,10 @@ join x = MkC (λ ε -> fun (fun x (halvePos ε)) (halvePos ε)) cheat
 
 ucJoin : ∀ {a : Set} {{metric : MetricSpace a}} -> UniformlyContinuous (join {a})
 ucJoin = WrapMod id cheat
-{-# COMPILE AGDA2HS ucJoin #-}
+{-# FOREIGN AGDA2HS
+ucJoin :: UniformlyContinuous
+ucJoin = WrapMod Prelude.id
+#-}
 
 -- map f x is regular when a is a prelength space.
 -- So the range might be a simple metric space.

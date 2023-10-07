@@ -1,6 +1,10 @@
 -- The SemiRing and Ring classes.
 module Algebra.Ring where
 
+{-# FOREIGN AGDA2HS
+import qualified Prelude
+#-}
+
 open import Agda.Builtin.Unit
 open import Agda.Builtin.FromNat
 open import Agda.Builtin.Nat using (zero; suc)
@@ -91,12 +95,13 @@ record Ring (a : Set) : Set₁ where
 open Ring {{...}} public
 {-# COMPILE AGDA2HS Ring class #-}
 
-{-
-agda2hs doesn't like it. We'll take a look at that later.
 _-_ : {a : Set} -> {{Ring a}} -> a -> a -> a
 x - y = x + negate y
-{-# COMPILE AGDA2HS _-_ #-}
--}
+-- agda2hs doesn't like it. We'll take a look at that later.
+{-# FOREIGN AGDA2HS
+(-) :: Ring a => a -> a -> a
+a - b = a + negate b
+#-}
 
 -- A way to convert these to standard Haskell type classes?
 

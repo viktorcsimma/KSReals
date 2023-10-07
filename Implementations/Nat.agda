@@ -1,8 +1,23 @@
 -- Instances for the builtin Nat type.
 module Implementations.Nat where
 
+{-# FOREIGN AGDA2HS
+import qualified Prelude
+
+-- It doesn't import the classes' methods by itself.
+-- Maybe we should fix that in agda2hs if the problem is there.
+import Algebra.Ring
+import Operations.Decidable
+import Operations.Pow
+import Operations.ShiftL
+
+-- Sometimes, Nat doesn't get rewritten to Natural.
+type Nat = Natural
+#-}
+
 open import Agda.Builtin.Unit
-open import Agda.Builtin.Nat hiding (_<_) -- that's built in for Nat, but is a Boolean operator
+import Agda.Builtin.Nat
+open Agda.Builtin.Nat hiding (_<_; _+_; _*_) -- that's built in for Nat, but is a Boolean operator
 open import Agda.Builtin.Equality
 open import Haskell.Prim.Tuple
 open import Haskell.Prim using (⊥; IsTrue; id; magic)
@@ -14,8 +29,7 @@ open import Tools.Cheat
 open import Tools.PropositionalEquality
 open import Algebra.Setoid
 open import Operations.Decidable
-import Algebra.Ring
-open Algebra.Ring hiding (_+_; _*_) -- here we use the Nat ones by default
+open import Algebra.Ring
 open import Algebra.Order
 open import Operations.Pow
 open import Operations.ShiftL
@@ -42,6 +56,7 @@ instance
   setoidNat .≃-refl = refl
   setoidNat .≃-sym refl = refl
   setoidNat .≃-trans refl refl = refl
+  {-# COMPILE AGDA2HS setoidNat #-}
 
   decSetoidNat : DecSetoid Nat
   DecSetoid._≃#_ decSetoidNat = _==_
@@ -52,14 +67,15 @@ instance
   -- We have to write this manually;
   -- otherwise it won't recognise that _≃_ is _≡_.
   semiRingNat .super = setoidNat
-  SemiRing._+_ semiRingNat = _+_
-  SemiRing._*_ semiRingNat = _*_
-  semiRingNat .+-proper {x} {y} {z} {w} x≡z y≡w = trans (cong (x +_) y≡w) (cong (_+ w) x≡z)
+  SemiRing._+_ semiRingNat = Agda.Builtin.Nat._+_
+  SemiRing._*_ semiRingNat = Agda.Builtin.Nat._*_
+  semiRingNat .+-proper {x} {y} {z} {w} x≡z y≡w = trans (cong (x +_) y≡w)
+                                                        (cong (λ t -> t + w) x≡z)
   semiRingNat .+-assoc zero y z = refl
   semiRingNat .+-assoc (suc x) y z = cong suc (+-assoc x y z)
   semiRingNat .*-proper {x} {y} {z} {w} x≡z y≡w = trans (cong (x *_) y≡w) (cong (_* w) x≡z)
-  semiRingNat .null = zero
-  semiRingNat .one = suc zero
+  semiRingNat .null = 0
+  semiRingNat .one  = 1
   semiRingNat .NonZero = _≢0
   semiRingNat .NonZeroCorrect zero = magic , λ f -> f refl
   semiRingNat .NonZeroCorrect (suc n) = (λ _ ()) , λ _ -> tt
@@ -123,7 +139,7 @@ instance
 
   decLeNat : DecLe Nat
   DecLe.le decLeNat = leNat
-  DecLe._≤#_ decLeNat n m = n Agda.Builtin.Nat.< (suc m)
+  DecLe._≤#_ decLeNat n m = n Agda.Builtin.Nat.< (1 + m)
   DecLe.≤#-correct decLeNat n m = id , id
   {-# COMPILE AGDA2HS decLeNat #-}
 
@@ -151,12 +167,12 @@ instance
   Pow.powSuc natPowNat = λ _ _ -> refl
   {-# FOREIGN AGDA2HS
   -- We'll change this to a more efficient implementation.
-  instance NatPow Natural Natural where
+  instance Pow Natural Natural where
     n ^ k = go n k 1
       where
         go :: Natural -> Natural -> Natural -> Natural
         go base 0 res = res
-        go base exp res = go (base * base) (exp `div` 2) (if (even exp) then res else res * base)
+        go base exp res = go (base * base) (exp `Prelude.div` 2) (if (Prelude.even exp) then res else res * base)
   #-}
   
   shiftLNat : ShiftL Nat Nat
@@ -172,7 +188,7 @@ instance
   {-# FOREIGN AGDA2HS
   instance ShiftL Nat Nat where
     shiftl n 0 = n
-    shiftl n k = 2 * shiftl n (k - 1)
+    shiftl n k = 2 * shiftl n (k Prelude.- 1)
   #-}
 
 -- This rounds downwards.
@@ -182,7 +198,7 @@ halveNat (suc zero) = zero
 halveNat (suc (suc n)) = suc (halveNat n)
 {-# FOREIGN AGDA2HS
 halveNat :: Natural -> Natural
-halveNat x = div x 2
+halveNat x = Prelude.div x 2
 #-}
 
 -- A function calculating log₂x rounded downwards.
@@ -192,9 +208,9 @@ natLog2Floor (suc zero) = zero
 natLog2Floor n@(suc (suc _)) = suc (natLog2Floor (halveNat n))
 {-# FOREIGN AGDA2HS
 natLog2Floor :: Natural -> Natural
-natLog2Floor 0 = error "logarithm of 0 would be minus infinity"
+natLog2Floor 0 = Prelude.error "logarithm of 0 would be minus infinity"
 natLog2Floor 1 = 0
-natLog2Floor n = suc $ natLog2Floor $ div n 2
+natLog2Floor n = 1 Prelude.+ (natLog2Floor (Prelude.div n 2))
 #-}
 
 @0 natLog2FloorLowerBound : ∀ (x : Nat) {@0 x≢0 : NonZero x} ->
@@ -256,5 +272,5 @@ instance
   {-# FOREIGN AGDA2HS
   instance Naturals Natural where
     naturalsToSemiRing 0 = null
-    naturalsToSemiRing n = one + naturalsToSemiRing (n - 1)
+    naturalsToSemiRing n = one + naturalsToSemiRing (n Prelude.- 1)
   #-}

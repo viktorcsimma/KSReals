@@ -3,9 +3,30 @@ module Implementations.Int where
 
 {-# FOREIGN AGDA2HS
 {-# LANGUAGE MultiParamTypeClasses #-}
--- import qualified Prelude
+import qualified Prelude
+import Prelude (Integer, Integral)
 import Numeric.Natural
-import Data.Bits (shift) #-}
+import Data.Bits (shift)
+
+-- It doesn't import the classes' methods by itself.
+-- Maybe we should fix that in agda2hs if the problem is there.
+
+import Operations.Decidable
+import Operations.Abs
+import Operations.Pow
+import Operations.ShiftL
+import Algebra.Ring
+import Implementations.Nat
+
+-- Sometimes, Int doesn't get rewritten to Integer.
+type Int = Integer
+
+-- And to bypass pos and negsuc:
+pos :: (Prelude.Integral a, Prelude.Integral b) => a -> b
+pos = Prelude.fromIntegral
+negsuc :: Integral a => Natural -> a
+negsuc x = Prelude.negate (1 Prelude.+ (Prelude.fromIntegral x))
+#-}
 
 open import Tools.Cheat
 
@@ -23,7 +44,7 @@ open import Tools.PropositionalEquality
 open import Algebra.Setoid
 open import Operations.Decidable
 import Algebra.Ring
-open Algebra.Ring hiding (_+_; _*_)
+open Algebra.Ring
 open import Implementations.Nat
 open import Algebra.Order
 open import Operations.Abs
@@ -33,10 +54,19 @@ open import Operations.Pow
 -- Here, the operators are not pre-defined;
 -- so we have to copy them from the standard library.
 
-private
-  infixl 7 _*_
-  infixl 6 _+_
+-- Instead of type annotations:
+toInt toHsInt : Int -> Int
+toInt = id
+toHsInt = id
+{-# FOREIGN AGDA2HS
+toInt :: Integral a => a -> Integer
+toInt = Prelude.fromIntegral
 
+toHsInt :: Integral a => a -> Prelude.Int
+toHsInt = Prelude.fromIntegral
+#-}
+
+private
   intNegate : Int -> Int
   intNegate (pos zero) = pos zero
   intNegate (pos (suc n)) = negsuc n
@@ -77,19 +107,27 @@ private
     xMonusNatxIsZero zero = refl
     xMonusNatxIsZero (suc x) = xMonusNatxIsZero x
 
-  _+_ : Int -> Int -> Int
-  pos x + pos y = pos (x Agda.Builtin.Nat.+ y)
-  pos x + negsuc y = natSub x (suc y)
-  negsuc x + pos y = natSub y (suc x)
-  negsuc x + negsuc y = negsuc (suc (x Agda.Builtin.Nat.+ y))
+  intPlus : Int -> Int -> Int
+  intPlus (pos x) (pos y) = pos (x Agda.Builtin.Nat.+ y)
+  intPlus (pos x) (negsuc y) = natSub x (suc y)
+  intPlus (negsuc x) (pos y) = natSub y (suc x)
+  intPlus (negsuc x) (negsuc y) = negsuc (suc (x Agda.Builtin.Nat.+ y))
   -- We won't compile this. Instead, we'll use Haskell's builtin operators.
+  {-# FOREIGN AGDA2HS
+  intPlus :: Integer -> Integer -> Integer
+  intPlus a b = a Prelude.+ b       -- for some reason, GHC only accepts it this way
+  #-}
 
   -- Now multiplication. We won't compile this either.
-  _*_ : Int -> Int -> Int
-  pos n * pos n₁ = pos (n Agda.Builtin.Nat.* n₁)
-  pos n * negsuc n₁ = intNegate (pos (n Agda.Builtin.Nat.* suc n₁))
-  negsuc n * pos n₁ = intNegate (pos (suc n Agda.Builtin.Nat.* n₁))
-  negsuc n * negsuc n₁ = pos (suc n Agda.Builtin.Nat.* suc n₁)
+  intTimes : Int -> Int -> Int
+  intTimes (pos n) (pos n₁) = pos (n Agda.Builtin.Nat.* n₁)
+  intTimes (pos n) (negsuc n₁) = intNegate (pos (n Agda.Builtin.Nat.* suc n₁))
+  intTimes (negsuc n) (pos n₁) = intNegate (pos (suc n Agda.Builtin.Nat.* n₁))
+  intTimes (negsuc n) (negsuc n₁) = pos (suc n Agda.Builtin.Nat.* suc n₁)
+  {-# FOREIGN AGDA2HS
+  intTimes :: Integer -> Integer -> Integer
+  intTimes a b = a Prelude.* b
+  #-}
 
   -- 0.5 will be rounded to 0;
   -- -0.5 to -1.
@@ -120,7 +158,7 @@ natAbs (pos n) = n
 natAbs (negsuc n) = suc n
 {-# FOREIGN AGDA2HS
 natAbs :: Integer -> Natural
-natAbs = fromInteger . Prelude.abs
+natAbs = Prelude.fromInteger Prelude.. Prelude.abs
 #-}
 
 instance
@@ -142,7 +180,7 @@ instance
   DecSetoid.≃#-correct decSetoidInt (negsuc n) (negsuc n₁) = cheat
   {-# FOREIGN AGDA2HS
   instance DecSetoid Integer where
-    (≃#) = (==)
+    a ≃# b = a Prelude.== b  -- For some reason, GHC only accepts it in this form.
   #-}
 
   strongSetoidInt : StrongSetoid Int
@@ -161,14 +199,14 @@ instance
 
   semiRingInt : SemiRing Int
   SemiRing.super semiRingInt = setoidInt
-  SemiRing._+_ semiRingInt = _+_
-  SemiRing._*_ semiRingInt = _*_
+  SemiRing._+_ semiRingInt = intPlus
+  SemiRing._*_ semiRingInt = intTimes
   SemiRing.+-proper semiRingInt refl refl = refl
   SemiRing.+-assoc semiRingInt x y z = cheat
   SemiRing.*-proper semiRingInt refl refl = refl
   SemiRing.*-assoc semiRingInt x y z = cheat
-  SemiRing.null semiRingInt = pos zero
-  SemiRing.one semiRingInt = pos (suc zero)
+  SemiRing.null semiRingInt = pos 0
+  SemiRing.one semiRingInt  = pos 1
   SemiRing.NonZero semiRingInt = _≢+0
   SemiRing.NonZeroCorrect semiRingInt (pos zero) = magic , λ f -> f refl
   SemiRing.NonZeroCorrect semiRingInt (pos (suc n)) = (λ _ ()) , λ _ -> tt
@@ -204,7 +242,9 @@ instance
   Ring.+-inverseʳ ringInt (pos zero) = refl
   Ring.+-inverseʳ ringInt (pos (suc n)) = natSubSameIsZero (suc n)
   Ring.+-inverseʳ ringInt (negsuc n) = natSubSameIsZero (suc n)
-  {-# COMPILE AGDA2HS ringInt #-}
+  {-# FOREIGN AGDA2HS
+  instance Ring Integer where
+    negate = Prelude.negate #-}
 
   -- Order-related instances
   leInt : Le Int
@@ -226,7 +266,7 @@ instance
   DecLe.≤#-correct decLeInt (negsuc n) (negsuc n₁) = id , id
   {-# FOREIGN AGDA2HS
   instance DecLe Integer where
-    (≤#) = (<=)
+    a ≤# b = a Prelude.<= b
   #-}
 
   partialOrderInt : PartialOrder Int
@@ -254,7 +294,7 @@ instance
   DecLt.<#-correct decLtInt (negsuc n) (negsuc n₁) = id , id
   {-# FOREIGN AGDA2HS
   instance DecLt Integer where
-    (<#) = Prelude.(<)
+    a <# b = a Prelude.< b
   #-}
 
   pseudoOrderInt : PseudoOrder Int
@@ -290,7 +330,7 @@ instance
       where
         go :: Integer -> Natural -> Integer -> Integer
         go base 0 res = res
-        go base exp res = go (base * base) (exp `div` 2) (if (even exp) then res else res * base)
+        go base exp res = go (base * base) (exp `Prelude.div` 2) (if (Prelude.even exp) then res else res * base)
   #-}
 
   natShiftLInt : ShiftL Int Nat
@@ -303,7 +343,7 @@ instance
   -- Actually, there is a builtin shift function in Data.Bits.
   {-# FOREIGN AGDA2HS
   instance ShiftL Integer Natural where
-    shiftl x k = shift x (fromIntegral k)
+    shiftl x k = shift x (Prelude.fromIntegral k)
   #-}
 
   -- We need an integer shift operation, too.
@@ -323,7 +363,7 @@ instance
   {-# FOREIGN AGDA2HS
   -- There is a builtin shift function in Data.Bits.
   instance ShiftL Int Int where
-    shiftl = shift
+    shiftl x n = shift x (Prelude.fromIntegral n)
   #-}
 
 {-

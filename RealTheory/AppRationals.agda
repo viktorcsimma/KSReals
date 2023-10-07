@@ -8,6 +8,16 @@
 
 module RealTheory.AppRationals where
 
+{-# FOREIGN AGDA2HS
+import qualified Prelude
+import Prelude (Integer, const)
+import Numeric.Natural
+
+import Algebra.Ring
+import Algebra.MetricSpace
+
+#-}
+
 open import Agda.Builtin.Nat using (Nat; zero; suc)
 open import Agda.Builtin.Int using (Int; pos; negsuc)
 open import Haskell.Prim using (id; const)
