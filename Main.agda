@@ -1,0 +1,49 @@
+-- A main program for demonstrating that
+-- the implementation is indeed runnable.
+
+{-# FOREIGN AGDA2HS
+import qualified Prelude
+import Prelude (IO, Show, putStrLn, show)
+
+import Implementations.Int
+import Tools.Show
+#-}
+
+open import Agda.Builtin.Unit
+open import Agda.Builtin.Nat using (Nat)
+open import Agda.Builtin.Int using (pos; negsuc)
+open import Agda.Builtin.IO
+open import Haskell.Prim.Show
+open import Haskell.Prim.String
+open import Haskell.Prim
+
+{-# FOREIGN AGDA2HS
+import RealTheory.Reals
+#-}
+
+open import Tools.Cheat
+
+open import Tools.ErasureProduct
+open import Algebra.Ring
+open import Algebra.Field
+open import RealTheory.AppRationals
+open import RealTheory.Completion
+open import RealTheory.Reals
+open import Implementations.Nat
+open import Implementations.Int
+open import Implementations.Rational
+open import Implementations.Dyadic
+open import Implementations.DyadicReal
+open import Test.Exp
+open import Tools.Show
+
+postulate putStrLn : String → IO ⊤
+
+toCalc : DReal
+toCalc = smallExp (pos 1 :|^ pos 0) cheat
+{-# COMPILE AGDA2HS toCalc #-}
+
+main : IO ⊤
+main = putStrLn (show (fun toCalc
+                        (MkFrac (pos 1) (pos 1000000000000000000000000000000) tt :&: itsTrue)))
+{-# COMPILE AGDA2HS main #-}

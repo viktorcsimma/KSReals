@@ -2,3 +2,7 @@
 *.agdai
 MAlonzo/**
 *.hs
+*.hi
+*.o
+*.prof
+Main
