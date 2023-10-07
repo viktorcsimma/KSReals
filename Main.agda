@@ -26,6 +26,7 @@ open import Tools.Cheat
 open import Tools.ErasureProduct
 open import Algebra.Ring
 open import Algebra.Field
+open import Operations.ShiftL
 open import RealTheory.AppRationals
 open import RealTheory.Completion
 open import RealTheory.Reals
@@ -45,5 +46,7 @@ toCalc = smallExp (pos 1 :|^ pos 0) cheat
 
 main : IO ⊤
 main = putStrLn (show (fun toCalc
-                        (MkFrac (pos 1) (pos 1000000000000000000000000000000) tt :&: itsTrue)))
+                        (MkFrac (pos 1)
+                        (shiftl (pos 1) (toInt (pos 33219)))  -- that is log₂ (10^10000)
+                           tt :&: itsTrue)))
 {-# COMPILE AGDA2HS main #-}
