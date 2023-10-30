@@ -1,5 +1,6 @@
 -- Some useful properties of relations
 -- and propositions.
+{-# OPTIONS --erasure #-}
 
 module Tools.Relations where
 

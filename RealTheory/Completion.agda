@@ -1,5 +1,7 @@
 -- The definition of the completion monad.
 -- This makes a prelength space Cauchy complete.
+{-# OPTIONS --erasure #-}
+
 module RealTheory.Completion where
 
 {-# FOREIGN AGDA2HS
@@ -7,6 +9,8 @@ import qualified Prelude
 import Prelude (Integer, const, (.))
 
 import Implementations.Int
+import Implementations.Rational
+import Algebra.Ring
 #-}
 
 open import Agda.Builtin.Unit
@@ -135,9 +139,10 @@ instance
     oldPack : Σ0 a
       (λ z → ball δ₁ x z × ball δ₂ z y)
     oldPack = prelength ε δ₁ δ₂ x y ε<δ₁+δ₂ bεxy
-  {-# COMPILE AGDA2HS prelengthΣ0 #-}
+  -- {-# COMPILE AGDA2HS prelengthΣ0 #-} -- GHC sees this as a duplicate of the next instance
 
-  prelengthInterval : ∀ {a : Set} {{prelength : PrelengthSpace a}} {{le : Le a}}
+  -- the instance must not have the same name as the function!
+  prelengthInterval : ∀ {a : Set} {{prelengtha : PrelengthSpace a}} {{le : Le a}}
                {@0 I : Interval a}
                -> PrelengthSpace (Σ0 a (IsIn I))
   PrelengthSpace.metricSpace prelengthInterval = metricΣ0
@@ -152,7 +157,7 @@ instance
     where
     prelengthPack : Σ0 a (λ z -> ball δ₁ x z × ball δ₂ z y)
     prelengthPack = prelength ε δ₁ δ₂ x y ε<δ₁+δ₂ bεxy
-  -- {-# COMPILE AGDA2HS prelengthInterval #-}     -- GHC sees it as a duplicate
+  {-# COMPILE AGDA2HS prelengthInterval #-}
 
 join : ∀ {a : Set} {{metric : MetricSpace a}} -> C (C a) -> C a
 join x = MkC (λ ε -> fun (fun x (halvePos ε)) (halvePos ε)) cheat

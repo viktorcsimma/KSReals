@@ -1,5 +1,7 @@
 -- Some properties of _≡_ we don't want to import from the standard library.
 -- Copied from Relation/Binary/PropositionalEquality/Core.agda.
+{-# OPTIONS --erasure #-}
+
 module Tools.PropositionalEquality where
 
 open import Agda.Builtin.Equality

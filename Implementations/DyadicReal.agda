@@ -1,5 +1,6 @@
 -- A concrete implementation of the reals
 -- based on dyadic rationals.
+{-# OPTIONS --erasure #-}
 
 module Implementations.DyadicReal where
 

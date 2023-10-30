@@ -1,5 +1,6 @@
 -- A main program for demonstrating that
 -- the implementation is indeed runnable.
+{-# OPTIONS --erasure #-}
 
 {-# FOREIGN AGDA2HS
 import qualified Prelude
@@ -47,6 +48,6 @@ toCalc = smallExp (pos 1 :|^ pos 0) cheat
 main : IO ⊤
 main = putStrLn (show (fun toCalc
                         (MkFrac (pos 1)
-                        (shiftl (pos 1) (toInt (pos 33219)))  -- that is log₂ (10^10000)
+                        (shift (pos 1) (toInt (pos 33219)))  -- that is log₂ (10^10000)
                            tt :&: itsTrue)))
 {-# COMPILE AGDA2HS main #-}

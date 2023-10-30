@@ -1,4 +1,6 @@
 -- The Field and DecField classes.
+{-# OPTIONS --erasure #-}
+
 module Algebra.Field where
 
 open import Haskell.Prim using (⊥)

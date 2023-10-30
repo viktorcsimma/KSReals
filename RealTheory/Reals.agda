@@ -1,11 +1,14 @@
 -- Some common operations on real number types
 -- (AppRationals types in the C monad).
+{-# OPTIONS --erasure #-}
+
 module RealTheory.Reals where
 
 {-# FOREIGN AGDA2HS
 import qualified Prelude
 import Prelude (Integer, Either(..), Bool(..), id, (.))
 
+import Operations.ShiftL
 import Implementations.Int
 import Implementations.Rational
 import RealTheory.AppRationals
@@ -98,7 +101,7 @@ posRCrit x n = ε <# cast (fun x (halvePos εpos))
   -- Since we use strict inequality in PosRT,
   -- we don't need to shift the right side more.
   ε : Rational
-  ε = shiftl (MkFrac (pos 1) (pos 1) tt) (negate (toInt (pos n)))
+  ε = shift (MkFrac (pos 1) (pos 1) tt) (negate (toInt (pos n)))
   εpos : PosRational
   εpos = ε :&: cheat
 {-# COMPILE AGDA2HS posRCrit #-}
@@ -272,6 +275,8 @@ witness p (n :&: hyp) = go 1 n
   ... | false = go (suc n) (pred n0)
 -- Tried it with if-then-else, but then it got stuck at the next one.
 {-# FOREIGN AGDA2HS
+-- Here we go faster, by shifting leftwards and thus increasing it exponentially
+-- instead of just incrementing by one.
 witness :: (Natural -> Bool) -> Σ0 Natural
 witness p = (:&:) (Prelude.until p (\ n -> shiftl n (1 :: Natural)) 1)
 #-}
@@ -285,7 +290,7 @@ witnessForPos x hyp = ε :&: cheat
   n : Nat
   n = proj₁ natPack
   ε : PosRational
-  ε = shiftl (MkFrac (pos 1) (pos 1) tt) (toInt (negsuc n))
+  ε = shift (MkFrac (pos 1) (pos 1) tt) (toInt (negsuc n))
            :&: cheat
 {-# COMPILE AGDA2HS witnessForPos #-}
 

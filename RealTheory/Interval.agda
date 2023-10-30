@@ -1,5 +1,7 @@
 -- A definition of closed intervals on ordered sets
 -- and a way to convert them to predicates.
+{-# OPTIONS --erasure #-}
+
 module RealTheory.Interval where
 
 open import Agda.Builtin.Unit

@@ -1,4 +1,6 @@
 -- A definiton for uniform continuity.
+{-# OPTIONS --erasure #-}
+
 module RealTheory.Continuity where
 
 open import Agda.Builtin.Unit

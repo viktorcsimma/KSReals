@@ -1,4 +1,6 @@
 -- The SemiRing and Ring classes.
+{-# OPTIONS --erasure #-}
+
 module Algebra.Ring where
 
 {-# FOREIGN AGDA2HS

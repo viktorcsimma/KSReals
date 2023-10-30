@@ -1,5 +1,7 @@
 -- Definitions and type classes about decidable propositions,
 -- equality, ordering etc.
+{-# OPTIONS --erasure #-}
+
 module Operations.Decidable where
 
 open import Agda.Builtin.Bool

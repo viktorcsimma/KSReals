@@ -1,4 +1,6 @@
 -- Classes and predicates related to ordering.
+{-# OPTIONS --erasure #-}
+
 module Algebra.Order where
 
 open import Haskell.Prim.Either

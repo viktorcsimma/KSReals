@@ -1,6 +1,7 @@
 -- A module for testing the library
 -- with an unverified version
 -- of the exponentiation function.
+{-# OPTIONS --erasure #-}
 
 module Test.Exp where
 
@@ -36,7 +37,7 @@ open import Haskell.Prim using (if_then_else_)
 {-# TERMINATING #-}
 smallExp : ∀ {a : Set} {{ara : AppRationals a}} {{pra : PrelengthSpace a}}
          -> (x : a) -> @0 IsIn [ negate one , null ] x -> C a
-smallExp {a} x _ = MkC (λ ε -> go 0 1 (firstPrec ε) one null (halvePos ε) x) cheat
+smallExp {a} x _ = MkC (λ ε -> smallExpHelper 0 1 (firstPrec ε) one null (halvePos ε) x) cheat
   where
   -- The trick is that we actually do it with a precision of ε/2,
   -- but the appDivs' precision will be ε/4, ε/8, ε/16 etc.
@@ -44,29 +45,26 @@ smallExp {a} x _ = MkC (λ ε -> go 0 1 (firstPrec ε) one null (halvePos ε) x)
   firstPrec : PosRational -> Int
   firstPrec ε = ratLog2Floor (proj₁ (halvePos (halvePos ε))) {proj₂ (halvePos (halvePos ε))}
 
-  -- Here, the constraints for type a has to be defined again;
-  -- because Haskell thinks it's a different type.
-
   -- the index of the step (k),
   -- k!,
   -- the actual precision,
   -- xᵏ,
   -- and the one where the result is going to be
-  go : ∀ {a : Set} {{ara : AppRationals a}} {{pra : PrelengthSpace a}}
+  smallExpHelper : ∀ {a : Set} {{ara : AppRationals a}} {{pra : PrelengthSpace a}}
          -> (k fact : Nat) (divPrec : Int) (powxk res : a) (ε : PosRational) (x : a) -> a
-  go {a} k fact divPrec powxk res ε x =
+  smallExpHelper {a} k fact divPrec powxk res ε x =
     if (nextFrac powxk) ≤# proj₁ ε   -- that's why it only works for -1≤x≤0
       then res
-      else go
+      else smallExpHelper
             (1 + k)
             (fact * (1 + k))
             (divPrec - pos 1)
             (powxk * x)
             (res + aNextFrac fact powxk divPrec)
             ε x
-
     where
-    -- Here again...
+    -- Here, the constraints for type a have to be defined again;
+    -- because Haskell thinks it's a different type.
     nextFrac : ∀ {a : Set} {{ara : AppRationals a}} {{pra : PrelengthSpace a}}
                  -> a -> Rational
     nextFrac {a} powxk = cast {a} {Rational} powxk * MkFrac (pos 1) (pos fact) cheat

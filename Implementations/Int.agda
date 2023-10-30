@@ -1,4 +1,6 @@
 -- Instances for the builtin Int type.
+{-# OPTIONS --erasure #-}
+
 module Implementations.Int where
 
 {-# FOREIGN AGDA2HS
@@ -14,7 +16,6 @@ import Data.Bits (shift)
 import Operations.Decidable
 import Operations.Abs
 import Operations.Pow
-import Operations.ShiftL
 import Algebra.Ring
 import Implementations.Nat
 
@@ -48,7 +49,6 @@ open Algebra.Ring
 open import Implementations.Nat
 open import Algebra.Order
 open import Operations.Abs
-open import Operations.ShiftL
 open import Operations.Pow
 
 -- Here, the operators are not pre-defined;
@@ -129,16 +129,18 @@ private
   intTimes a b = a Prelude.* b
   #-}
 
-  -- 0.5 will be rounded to 0;
-  -- -0.5 to -1.
-  -- So like in Python.
-  halveInt : Int -> Int
-  halveInt (pos n) = pos (halveNat n)
-  halveInt (negsuc n) = negsuc (halveNat n)
-
   @0 _≢+0 : Int -> Set
   pos zero ≢+0 = ⊥
   _        ≢+0 = ⊤
+
+-- 0.5 will be rounded to 0;
+-- -0.5 to -1.
+-- So like in Python.
+-- This will be used in the Shift instance;
+-- so this has to be public.
+halveInt : Int -> Int
+halveInt (pos n) = pos (halveNat n)
+halveInt (negsuc n) = negsuc (halveNat n)
 
 -- Now this has to be public.
 intDiv : (x y : Int) -> @0 {y ≢+0} -> Int
@@ -331,39 +333,6 @@ instance
         go :: Integer -> Natural -> Integer -> Integer
         go base 0 res = res
         go base exp res = go (base * base) (exp `Prelude.div` 2) (if (Prelude.even exp) then res else res * base)
-  #-}
-
-  natShiftLInt : ShiftL Int Nat
-  ShiftL.semiringa natShiftLInt = semiRingInt
-  ShiftL.semiringb natShiftLInt = semiRingNat
-  ShiftL.shiftl natShiftLInt x k = x * (pos 2) ^ k
-  ShiftL.shiftlProper natShiftLInt _ _ _ _ refl refl = refl
-  ShiftL.shiftlNull natShiftLInt x = *-identityʳ x
-  ShiftL.shiftlSuc natShiftLInt x y = cheat
-  -- Actually, there is a builtin shift function in Data.Bits.
-  {-# FOREIGN AGDA2HS
-  instance ShiftL Integer Natural where
-    shiftl x k = shift x (Prelude.fromIntegral k)
-  #-}
-
-  -- We need an integer shift operation, too.
-  -- Of course, if the integer is negative, we will have to round.
-  -- E.g. 4.5 will be rounded to 4; -0.5 to -1.
-  intShiftLInt : ShiftL Int Int
-  ShiftL.semiringa intShiftLInt = semiRingInt
-  ShiftL.semiringb intShiftLInt = semiRingInt
-  ShiftL.shiftl intShiftLInt x (pos zero) = x
-  ShiftL.shiftl intShiftLInt (pos zero) _ = pos zero   -- stop if it's already zero
-  ShiftL.shiftl intShiftLInt x (pos n) = shiftl x n
-  ShiftL.shiftl intShiftLInt x (negsuc zero) = halveInt x
-  ShiftL.shiftl intShiftLInt x (negsuc (suc n)) = shiftl (halveInt x) (negsuc n)
-  ShiftL.shiftlProper intShiftLInt _ _ _ _ refl refl = refl
-  ShiftL.shiftlNull intShiftLInt x = refl
-  ShiftL.shiftlSuc intShiftLInt x n = cheat
-  {-# FOREIGN AGDA2HS
-  -- There is a builtin shift function in Data.Bits.
-  instance ShiftL Int Int where
-    shiftl x n = shift x (Prelude.fromIntegral n)
   #-}
 
 {-

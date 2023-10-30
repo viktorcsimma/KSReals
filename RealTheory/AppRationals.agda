@@ -5,6 +5,7 @@
 -- and an "apprApprox" function.
 -- The completion of a type with this class
 -- will give the real numbers.
+{-# OPTIONS --erasure #-}
 
 module RealTheory.AppRationals where
 
@@ -50,7 +51,7 @@ record AppRationals (aq : Set) : Set₁ where
     overlap {{strongSetoid}} : StrongSetoid aq
     overlap {{trivialApart}} : TrivialApart aq
     overlap {{absAq}} : Abs aq
-    overlap {{shiftL}} : ShiftL aq Int
+    overlap {{exactShift}} : ExactShift aq
     overlap {{natPow}} : Pow aq Nat
     overlap {{castAqRational}} : Cast aq Rational
     overlap {{castIntAq}} : Cast Int aq
@@ -69,14 +70,14 @@ record AppRationals (aq : Set) : Set₁ where
     -- And we don't require it to be nonzero.
     appDiv : (x y : aq) -> @0 (NonZero y) -> Int -> aq
     @0 appDivCorrect : ∀ (x y : aq) (NonZeroy : NonZero y) (k : Int)
-                            -> ball (shiftl one k :&: cheat)   -- 2 ^ k
+                            -> ball (shift one k :&: cheat)   -- 2 ^ k
                                     (cast {aq} {Rational} (appDiv x y NonZeroy k))
                                     (cast {aq} {Rational} x * recip (cast {aq} {Rational} y) (aqNonZeroToNonZero NonZeroy))
 
     -- A function "compressing" an AQ to a more easily representable AQ,
     -- within a given range.
     appApprox : aq -> Int -> aq
-    @0 appApproxCorrect : ∀ x k -> ball (shiftl one k :&: cheat)
+    @0 appApproxCorrect : ∀ x k -> ball (shift one k :&: cheat)
                                    (cast {aq} {Rational} (appApprox x k))
                                    (cast {aq} {Rational} x)
 
@@ -94,7 +95,7 @@ instance
   AppRationals.strongSetoid appRationalsRational = strongSetoidFrac
   AppRationals.trivialApart appRationalsRational = trivialApartFrac
   AppRationals.absAq appRationalsRational = absFrac
-  AppRationals.shiftL appRationalsRational = shiftLFrac
+  AppRationals.exactShift appRationalsRational = exactShiftFrac {{intShiftL}}
   AppRationals.natPow appRationalsRational = natPowFrac
   AppRationals.castAqRational appRationalsRational = castSame
   AppRationals.castIntAq appRationalsRational = castFrac

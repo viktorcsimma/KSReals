@@ -1,5 +1,6 @@
 -- Type classes for types
 -- which have an absolute value, shift etc. operation.
+{-# OPTIONS --erasure #-}
 
 module Operations.Abs where
 

@@ -1,5 +1,7 @@
 -- A type class for pair of types
 -- for which there is a "canonical" cast operation.
+{-# OPTIONS --erasure #-}
+
 module Operations.Cast where
 
 open import Haskell.Prim using (id)

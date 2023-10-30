@@ -1,5 +1,7 @@
 -- The Setoid and StrongSetoid classes
 -- and some useful properties of functions on them.
+{-# OPTIONS --erasure #-}
+
 module Algebra.Setoid where
 
 open import Haskell.Prim using (⊥)
@@ -89,10 +91,10 @@ StrongSetoidMorphism {a} f = ∀ (x y : a) -> f x >< f y -> x >< y
 -- We now prove this implies the Setoid version.
 @0 strongSetoidMorphismToSetoid : {a b : Set} -> {{stra : StrongSetoid a}} -> {{strb : StrongSetoid b}}
                                    -> (f : a -> b) -> StrongSetoidMorphism {a} {b} {{stra}} {{strb}} f -> SetoidMorphism f
-strongSetoidMorphismToSetoid f morphf x y x≃y = fst ><-tight-apart λ fx><fy → cont x≃y (morphf x y fx><fy)
+strongSetoidMorphismToSetoid {a} {b} f morphf x y x≃y = fst (><-tight-apart {b}) λ fx><fy → cont x≃y (morphf x y fx><fy)
   where
     cont : x ≃ y -> x >< y -> ⊥
-    cont x≃y x><y = snd ><-tight-apart x≃y x><y
+    cont x≃y x><y = snd (><-tight-apart {a}) x≃y x><y
 
 @0 StrongSetoidBinaryMorphism : {a b : Set} -> {{StrongSetoid a}} -> {{StrongSetoid b}}
                                    -> (a -> a -> b) -> Set

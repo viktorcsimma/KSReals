@@ -4,6 +4,7 @@
 -- unsafe until the import is removed.
 -- But it cannot affect computational results;
 -- since it is erased.
+{-# OPTIONS --erasure #-}
 
 module Tools.Cheat where
 

@@ -1,4 +1,6 @@
 -- Instances for the builtin Nat type.
+{-# OPTIONS --erasure #-}
+
 module Implementations.Nat where
 
 {-# FOREIGN AGDA2HS
@@ -9,7 +11,6 @@ import qualified Prelude
 import Algebra.Ring
 import Operations.Decidable
 import Operations.Pow
-import Operations.ShiftL
 
 -- Sometimes, Nat doesn't get rewritten to Natural.
 type Nat = Natural
@@ -32,7 +33,6 @@ open import Operations.Decidable
 open import Algebra.Ring
 open import Algebra.Order
 open import Operations.Pow
-open import Operations.ShiftL
 
 @0 _≢0 : Nat -> Set
 zero ≢0 = ⊥
@@ -67,8 +67,8 @@ instance
   -- We have to write this manually;
   -- otherwise it won't recognise that _≃_ is _≡_.
   semiRingNat .super = setoidNat
-  SemiRing._+_ semiRingNat = Agda.Builtin.Nat._+_
-  SemiRing._*_ semiRingNat = Agda.Builtin.Nat._*_
+  semiRingNat ._+_ n m = Agda.Builtin.Nat._+_ n m   -- since the last update, it only compiles when writing the parameters here
+  semiRingNat ._*_ n m = Agda.Builtin.Nat._*_ n m
   semiRingNat .+-proper {x} {y} {z} {w} x≡z y≡w = trans (cong (x +_) y≡w)
                                                         (cong (λ t -> t + w) x≡z)
   semiRingNat .+-assoc zero y z = refl
@@ -174,22 +174,6 @@ instance
         go base 0 res = res
         go base exp res = go (base * base) (exp `Prelude.div` 2) (if (Prelude.even exp) then res else res * base)
   #-}
-  
-  shiftLNat : ShiftL Nat Nat
-  ShiftL.semiringa shiftLNat = semiRingNat
-  ShiftL.semiringb shiftLNat = semiRingNat
-  ShiftL.shiftl shiftLNat n zero = n
-  ShiftL.shiftl shiftLNat n (suc k) = 2 * shiftl n k
-  ShiftL.shiftlProper shiftLNat _ _ _ _ refl refl = refl
-  ShiftL.shiftlNull shiftLNat _ = refl
-  ShiftL.shiftlSuc shiftLNat x y = cheat
-  -- {-# COMPILE AGDA2HS shiftLNat #-}
-  -- For there is a `suc` constructor:
-  {-# FOREIGN AGDA2HS
-  instance ShiftL Nat Nat where
-    shiftl n 0 = n
-    shiftl n k = 2 * shiftl n (k Prelude.- 1)
-  #-}
 
 -- This rounds downwards.
 halveNat : Nat -> Nat
@@ -255,17 +239,18 @@ instance
   Naturals.naturalsToSemiRing naturalsNat zero = null
   Naturals.naturalsToSemiRing naturalsNat {{semiRingb}} (suc n) =
                     (semiRingb SemiRing.+ one) (Naturals.naturalsToSemiRing naturalsNat n)
-  PreservesOp.setoidMorphism (SemiRingMorphism.preserves-+ (Naturals.isMorphism naturalsNat))
-                _ _ refl = ≃-refl
+  PreservesOp.setoidMorphism (SemiRingMorphism.preserves-+ (Naturals.isMorphism naturalsNat {{semiRingb}}))
+                _ _ refl = ≃-refl {{SemiRing.super semiRingb}}
   PreservesOp.preservesOp (SemiRingMorphism.preserves-+ (Naturals.isMorphism naturalsNat))
                 x y = cheat
-  PreservesOp.setoidMorphism (SemiRingMorphism.preserves-* (Naturals.isMorphism naturalsNat))
-                _ _ refl = ≃-refl
+  PreservesOp.setoidMorphism (SemiRingMorphism.preserves-* (Naturals.isMorphism naturalsNat {{semiRingb}}))
+                _ _ refl = ≃-refl {{SemiRing.super semiRingb}}
   PreservesOp.preservesOp (SemiRingMorphism.preserves-* (Naturals.isMorphism naturalsNat))
                 x y = cheat
-  SemiRingMorphism.preserves-null (Naturals.isMorphism naturalsNat) = ≃-refl
-  SemiRingMorphism.preserves-one (Naturals.isMorphism naturalsNat) = +-identityʳ one
-  Naturals.isUnique naturalsNat {f = f} record { preserves-+ = preserves-+ ; preserves-* = preserves-* ; preserves-null = preserves-null ; preserves-one = preserves-one } zero = ≃-sym preserves-null
+  SemiRingMorphism.preserves-null (Naturals.isMorphism naturalsNat {{semiRingb}}) = ≃-refl {{SemiRing.super semiRingb}}
+  SemiRingMorphism.preserves-one (Naturals.isMorphism naturalsNat {{semiRingb}}) = +-identityʳ {{semiRingb}} one
+  Naturals.isUnique naturalsNat {{semiRingb}} {f = f} record { preserves-+ = preserves-+ ; preserves-* = preserves-* ; preserves-null = preserves-null ; preserves-one = preserves-one } zero
+                    = ≃-sym {{super semiRingb}} preserves-null
   Naturals.isUnique naturalsNat {f = f} record { preserves-+ = preserves-+ ; preserves-* = preserves-* ; preserves-null = preserves-null ; preserves-one = preserves-one } (suc x) = cheat
   -- {-# COMPILE AGDA2HS naturalsNat #-}
   -- For now, we circumvent the `suc` problem by saying:

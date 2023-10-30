@@ -1,4 +1,6 @@
 -- Definition of metric and prelength spaces.
+{-# OPTIONS --erasure #-}
+
 module Algebra.MetricSpace where
 
 {-# FOREIGN AGDA2HS

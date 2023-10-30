@@ -1,5 +1,7 @@
 -- Show instances for different types
 -- (mainly for Dyadics, as they will be primarily used).
+{-# OPTIONS --erasure #-}
+
 module Tools.Show where
 
 {-# FOREIGN AGDA2HS
@@ -28,7 +30,7 @@ open import Operations.Pow
 -- for the sake of the termination checker.
 showDyadic : Dyadic -> String
 showDyadic (m :|^ pos zero) = show m
-showDyadic (m :|^ pos n) = show (m * shiftl one (pos n))
+showDyadic (m :|^ pos n) = show (m * shift one (pos n))
 showDyadic (m :|^ negsuc n) = sign m ++ showWithDecimalPoint
                                                     (go (natAbs m) zero (suc n) zero)
   where

@@ -1,5 +1,6 @@
 -- A concrete implementation of dyadic numbers
 -- and a proof that they are good for AppRationals.
+{-# OPTIONS --erasure #-}
 
 module Implementations.Dyadic where
 
@@ -8,6 +9,7 @@ import qualified Prelude
 import Prelude (Integer, Bool(..), id)
 
 import Tools.ErasureProduct
+import Operations.ShiftL
 import Implementations.Int
 import Implementations.Rational
 import Algebra.Ring
@@ -51,7 +53,7 @@ infix 10 _:|^_
 {-# COMPILE AGDA2HS Dyadic #-}
 
 twoPowInt : Int -> Rational
-twoPowInt n = shiftl (MkFrac (pos 1) (pos 1) tt) n
+twoPowInt n = shift (MkFrac (pos 1) (pos 1) tt) n
 {-# COMPILE AGDA2HS twoPowInt #-}
 
 dToQSlow : Dyadic -> Rational
@@ -86,9 +88,9 @@ instance
   -- Uh... what about an absolute value? Can that be used somehow?
   (semiRingDyadic SemiRing.+ mantx :|^ expox) (manty :|^ expoy) =
     if expox ≤# expoy
-      then (mantx + shiftl manty (expoy + negate expox))
+      then (mantx + shift manty (expoy + negate expox))
                    :|^ expox
-      else (shiftl mantx (expox + negate expoy) + manty)
+      else (shift mantx (expox + negate expoy) + manty)
                    :|^ expoy
   (semiRingDyadic SemiRing.* mantx :|^ expox) (manty :|^ expoy)
                    = (mantx * manty) :|^ (expox + expoy)
@@ -155,14 +157,33 @@ instance
   PseudoOrder.<-total pseudoOrderDyadic x y = <-total (dToQSlow x) (dToQSlow y)
   {-# COMPILE AGDA2HS pseudoOrderDyadic #-}
 
-  shiftLDyadic : ShiftL Dyadic Int
+  shiftLDyadic : ShiftL Dyadic
   ShiftL.semiringa shiftLDyadic = semiRingDyadic
-  ShiftL.semiringb shiftLDyadic = semiRingInt
+  ShiftL.shiftl shiftLDyadic x n = mant x :|^ (pos n + expo x)
+  ShiftL.shiftlProper shiftLDyadic = cheat
+  ShiftL.shiftlNull shiftLDyadic = cheat
+  ShiftL.shiftlSuc shiftLDyadic = cheat
+  {-
+  ShiftL.semiringa shiftLDyadic = semiRingDyadic
   ShiftL.shiftl shiftLDyadic x n = mant x :|^ (n + expo x)
   ShiftL.shiftlProper shiftLDyadic x x' y y' eqx refl = cheat
   ShiftL.shiftlNull shiftLDyadic = cheat
   ShiftL.shiftlSuc shiftLDyadic = cheat
+  -}
   {-# COMPILE AGDA2HS shiftLDyadic #-}
+
+  shiftDyadic : Shift Dyadic
+  Shift.super shiftDyadic = shiftLDyadic
+  Shift.shift shiftDyadic x n = mant x :|^ (n + expo x)
+  Shift.shiftProper shiftDyadic = cheat
+  Shift.shiftEquivalent shiftDyadic = cheat
+  Shift.shiftLeftThenRight shiftDyadic = cheat
+  {-# COMPILE AGDA2HS shiftDyadic #-}
+
+  exactShiftDyadic : ExactShift Dyadic
+  ExactShift.super exactShiftDyadic = shiftDyadic
+  ExactShift.shiftRightThenLeft exactShiftDyadic = cheat
+  {-# COMPILE AGDA2HS exactShiftDyadic #-}
 
   natPowDyadic : Pow Dyadic Nat
   Pow._^_ natPowDyadic x n = (mant x ^ n) :|^ ((pos n) * expo x)
@@ -172,7 +193,7 @@ instance
   {-# COMPILE AGDA2HS natPowDyadic #-}
 
   castDyadicRational : Cast Dyadic Rational
-  Cast.cast castDyadicRational x = cast {Int} {Rational} (mant x) * shiftl (one {Rational}) (expo x)
+  Cast.cast castDyadicRational x = cast {Int} {Rational} (mant x) * shift (one {Rational}) (expo x)
   {-# COMPILE AGDA2HS castDyadicRational #-}
 
   castIntDyadic : Cast Int Dyadic
@@ -193,7 +214,7 @@ instance
   AppRationals.pseudoOrder appRationalsDyadic = pseudoOrderDyadic
   AppRationals.strongSetoid appRationalsDyadic = strongSetoidDyadic
   AppRationals.trivialApart appRationalsDyadic = trivialApartDyadic
-  AppRationals.shiftL appRationalsDyadic = shiftLDyadic
+  AppRationals.exactShift appRationalsDyadic = exactShiftDyadic
   AppRationals.natPow appRationalsDyadic = natPowDyadic
   AppRationals.castAqRational appRationalsDyadic = castDyadicRational
   AppRationals.castIntAq appRationalsDyadic = castIntDyadic
@@ -211,14 +232,14 @@ instance
   AppRationals.aqNonZeroToNonZero appRationalsDyadic {negsuc n :|^ expo₁} NonZerox = cheat
 
   -- https://github.com/coq-community/corn/blob/c08a0418f97a04ea7a6cdc3a930561cc8fc84d82/reals/faster/ARbigD.v#L265
-  -- (shiftl (mant x) (- (k-1) + expo x - expo y)) `quot` mant y :|^ (k-1)
+  -- (shift (mant x) (- (k-1) + expo x - expo y)) `quot` mant y :|^ (k-1)
   -- But here, it was originally (k - 1) instead of k... why?
   AppRationals.appDiv appRationalsDyadic x y NonZeroy k
-      = (intDiv (shiftl (mant x) (negate k + pos 1 + expo x + negate (expo y))) (mant y)) {NonZeroy} :|^ (k - pos 1)
+      = (intDiv (shift (mant x) (negate k + pos 1 + expo x + negate (expo y))) (mant y)) {NonZeroy} :|^ (k - pos 1)
   AppRationals.appDivCorrect appRationalsDyadic = cheat
 
   -- Actually, we wouldn't have to shift if we shifted leftwards, would we?
-  AppRationals.appApprox appRationalsDyadic x k = shiftl (mant x) (expo x - k + pos 1) :|^ (k - pos 1)
+  AppRationals.appApprox appRationalsDyadic x k = shift (mant x) (expo x - k + pos 1) :|^ (k - pos 1)
   AppRationals.appApproxCorrect appRationalsDyadic = cheat
 
   setoidMorphism (SemiRingMorphism.preserves-+ (AppRationals.intToAqSemiRingMorphism appRationalsDyadic)) _ _ refl = refl
@@ -266,7 +287,7 @@ instance
        where
        goApprox : Rational -> Nat -> Nat
        goApprox q n = if q ≤# one then n
-                        else goApprox (shiftl q (toInt (negsuc 0))) (1 + n)
+                        else goApprox (shift q (toInt (negsuc 0))) (1 + n)
      currPrec : Int
      currPrec = approx d1
      desiredPrec : Int
@@ -281,7 +302,7 @@ instance
             -- and remainingSteps means how many times we need to subtract one from it
      go d _ _ _ zero = d
      go d q isAbove currPrec (suc n) =
-             if (abs ((dToQSlow d) + negate q) ≤# shiftl one (negsuc 0 + currPrec))
+             if (abs ((dToQSlow d) + negate q) ≤# shift one (negsuc 0 + currPrec))
              then go d q isAbove (negsuc 0 + currPrec) n
              else go (d + step isAbove currPrec) q isAbove (negsuc 0 + currPrec) n
        where
@@ -302,7 +323,7 @@ instance
           where
             goApprox :: Rational -> Natural -> Natural
             goApprox q n
-              = if q ≤# one then n else goApprox ((shiftl :: Rational -> Integer -> Rational) q (negsuc 0)) (1 + n)
+              = if q ≤# one then n else goApprox (shift q (negsuc 0)) (1 + n)
         currPrec :: Integer
         currPrec = approx d1
         desiredPrec :: Integer
@@ -314,7 +335,7 @@ instance
         go :: Dyadic -> Rational -> Bool -> Integer -> Natural -> Dyadic
         go d _ _ _ 0 = d
         go d q isAbove currPrec sn =
-                if (abs ((dToQSlow d) + negate q) ≤# shiftl one (negate 1 + currPrec))
+                if (abs ((dToQSlow d) + negate q) ≤# shift one (negate 1 + currPrec))
                 then go d q isAbove (negate 1 + currPrec) (sn Prelude.- 1)
                 else go (d + step isAbove currPrec) q isAbove (negate 1 + currPrec) (sn Prelude.- 1)
           where

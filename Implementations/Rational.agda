@@ -1,11 +1,13 @@
 -- An implementation of fractions of semirings
 -- and the rationals.
+{-# OPTIONS --erasure #-}
+
 module Implementations.Rational where
 
 {-# FOREIGN AGDA2HS {-# LANGUAGE MultiParamTypeClasses #-}
 
 import qualified Prelude
-import Prelude (Integer, Bool, otherwise)
+import Prelude (Integer, Bool, otherwise, fromIntegral, ($))
 
 import Algebra.Field
 import Operations.Cast
@@ -95,8 +97,8 @@ instance
   SemiRing.+-assoc semiRingFrac = cheat
   SemiRing.*-proper semiRingFrac = cheat
   SemiRing.*-assoc semiRingFrac = cheat
-  SemiRing.null (semiRingFrac {a}) = MkFrac null one NonZeroOne
-  SemiRing.one (semiRingFrac {a}) = MkFrac one one NonZeroOne
+  SemiRing.null (semiRingFrac {a}) = MkFrac null one (NonZeroOne {a})
+  SemiRing.one (semiRingFrac {a}) = MkFrac one one (NonZeroOne {a})
   SemiRing.NonZero (semiRingFrac {a}) x = NonZero (num x)
   SemiRing.NonZeroCorrect (semiRingFrac {a}) x = cheat
   SemiRing.NonZeroOne (semiRingFrac {a}) = NonZeroOne {a}
@@ -188,11 +190,10 @@ instance
                       {-{!trivialApart (num x * den y) (num y * den x)!}-}
   {-# COMPILE AGDA2HS trivialApartFrac #-}
 
-  -- Here we need negate from Ring.
-  absFrac : ∀ {a : Set} {{ring : Ring a}} {{le : Le a}} {{absa : Abs a}}
-                                      -> Abs (Frac a)
-  Abs.ring absFrac = ringFrac
-  Abs.le (absFrac {a} {{ring}} {{le}}) = leFrac {a} {{_}} {{le}}
+  -- Abs already implies Ring and Le..
+  absFrac : ∀ {a : Set} {{absa : Abs a}} -> Abs (Frac a)
+  Abs.ring (absFrac) = ringFrac
+  Abs.le (absFrac) = leFrac
   Abs.abs absFrac (MkFrac numx denx denNotNullx) = MkFrac (abs numx) (abs denx) cheat
   Abs.absCorrect absFrac x = cheat
   {-# COMPILE AGDA2HS absFrac #-}
@@ -219,21 +220,32 @@ instance
   {-# COMPILE AGDA2HS intPowFrac #-}
   -}
 
-  shiftLFrac : ∀ {a : Set} {{semiRing : SemiRing a}} {{natShiftL : ShiftL a Nat}} -> ShiftL (Frac a) Int
-  ShiftL.semiringa (shiftLFrac {{semiRing = semiRing}}) = semiRingFrac {{semiRing = semiRing}}
-  ShiftL.semiringb shiftLFrac = semiRingInt
-  ShiftL.shiftl shiftLFrac x (pos n) = MkFrac (shiftl (num x) n) (den x) (denNotNull x)
-  ShiftL.shiftl shiftLFrac x (negsuc n) = MkFrac (num x) (shiftl (den x) (suc n)) cheat
-  ShiftL.shiftlProper shiftLFrac x x' (pos n) (pos .n) eqx refl = cheat 
-  ShiftL.shiftlProper shiftLFrac _ _ (negsuc n) (negsuc .n) eqx refl = cheat
-  ShiftL.shiftlNull shiftLFrac x = cheat
-  ShiftL.shiftlSuc shiftLFrac x n = cheat
+  shiftLFrac : ∀ {a : Set} {{shiftLa : ShiftL a}} -> ShiftL (Frac a)
+  ShiftL.semiringa shiftLFrac = semiRingFrac
+  ShiftL.shiftl shiftLFrac p n = MkFrac (shiftl (num p) n) (den p) (denNotNull p)
+  ShiftL.shiftlProper shiftLFrac = cheat
+  ShiftL.shiftlNull shiftLFrac = cheat
+  ShiftL.shiftlSuc shiftLFrac = cheat
+  {-# COMPILE AGDA2HS shiftLFrac #-}
+
+  shiftFrac : ∀ {a : Set} {{shiftLa : ShiftL a}} -> Shift (Frac a)
+  Shift.super shiftFrac = shiftLFrac
+  Shift.shift shiftFrac p (pos n) = shiftl p n
+  Shift.shift shiftFrac p (negsuc n) = MkFrac (num p) (shiftl (den p) (suc n)) cheat
+  Shift.shiftProper shiftFrac = cheat
+  Shift.shiftEquivalent shiftFrac p n = cheat
+  Shift.shiftLeftThenRight shiftFrac = cheat
   {-# FOREIGN AGDA2HS
-  instance ShiftL a Nat => ShiftL (Frac a) Int where
-    shiftl x n
-      | n Prelude.>= 0     = MkFrac (shiftl (num x) (natAbs n)) (den x)
-      | otherwise          = MkFrac (num x) (shiftl (den x) (natAbs (negate n)))
+  instance ShiftL a => Shift (Frac a) where
+    shift p x
+      | 0  ≤# x       = shiftl p (fromIntegral x)
+      | otherwise    = MkFrac (num p) (shiftl (den p) (Prelude.fromIntegral $ (-1) * x))
   #-}
+
+  exactShiftFrac : ∀ {a : Set} {{shiftLa : ShiftL a}} -> ExactShift (Frac a)
+  ExactShift.super exactShiftFrac = shiftFrac
+  ExactShift.shiftRightThenLeft exactShiftFrac = cheat
+  {-# COMPILE AGDA2HS exactShiftFrac #-}
 
 -- Rational will be an alias for Frac Int.
 Rational : Set
@@ -260,10 +272,12 @@ multPos (p :&: 0<p) (q :&: 0<q) = (p * q) :&: cheat
 {-# COMPILE AGDA2HS plusPos #-}
 {-# COMPILE AGDA2HS multPos #-}
 halvePos : PosRational -> PosRational
-halvePos (p :&: 0<p) = shiftl p (toInt (negsuc 0)) :&: cheat
+halvePos (p :&: 0<p) = shift p (toInt (negsuc 0)) :&: cheat
 {-# COMPILE AGDA2HS halvePos #-}
 
 {-
+-- we don't need this for now.
+
 -- The rationals are "a field containing ℤ that moreover can be embedded
 -- into the field of fractions of ℤ".
 -- So the abstract type class is defined like this:
