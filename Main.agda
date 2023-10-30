@@ -36,7 +36,7 @@ open import Implementations.Int
 open import Implementations.Rational
 open import Implementations.Dyadic
 open import Implementations.DyadicReal
-open import Test.Exp
+open import Function.Exp
 open import Tools.Show
 
 postulate putStrLn : String → IO ⊤

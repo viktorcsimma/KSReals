@@ -3,7 +3,7 @@
 -- of the exponentiation function.
 {-# OPTIONS --erasure #-}
 
-module Test.Exp where
+module Function.Exp where
 
 {-# FOREIGN AGDA2HS
 import qualified Prelude
