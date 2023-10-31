@@ -35,9 +35,9 @@ open import Haskell.Prim using (if_then_else_)
 -- NOTE: this only works for -1≤x≤0.
 -- Now, we only define it for "rational" parameters.
 {-# TERMINATING #-}
-smallExp : ∀ {a : Set} {{ara : AppRationals a}} {{pra : PrelengthSpace a}}
+smallExpQ : ∀ {a : Set} {{ara : AppRationals a}}
          -> (x : a) -> @0 IsIn [ negate one , null ] x -> C a
-smallExp {a} x _ = MkC (λ ε -> smallExpHelper 0 1 (firstPrec ε) one null (halvePos ε) x) cheat
+smallExpQ {a} x _ = MkC (λ ε -> smallExpHelper 0 1 (firstPrec ε) one null (halvePos ε) x) cheat
   where
   -- The trick is that we actually do it with a precision of ε/2,
   -- but the appDivs' precision will be ε/4, ε/8, ε/16 etc.
@@ -50,7 +50,7 @@ smallExp {a} x _ = MkC (λ ε -> smallExpHelper 0 1 (firstPrec ε) one null (hal
   -- the actual precision,
   -- xᵏ,
   -- and the one where the result is going to be
-  smallExpHelper : ∀ {a : Set} {{ara : AppRationals a}} {{pra : PrelengthSpace a}}
+  smallExpHelper : ∀ {a : Set} {{ara : AppRationals a}}
          -> (k fact : Nat) (divPrec : Int) (powxk res : a) (ε : PosRational) (x : a) -> a
   smallExpHelper {a} k fact divPrec powxk res ε x =
     if (nextFrac powxk) ≤# proj₁ ε   -- that's why it only works for -1≤x≤0
@@ -76,13 +76,20 @@ smallExp {a} x _ = MkC (λ ε -> smallExpHelper 0 1 (firstPrec ε) one null (hal
                  -> (fact : Nat) (powxk : a) (divPrec : Int) -> a
     aNextFrac {a} fact powxk divPrec
       = powxk * appDiv one (cast {Int} {a} (pos fact)) cheat divPrec
-{-# COMPILE AGDA2HS smallExp #-}
+{-# COMPILE AGDA2HS smallExpQ #-}
 
-e : ∀ {a : Set} {{ara : AppRationals a}} {{pra : PrelengthSpace a}}
+e : ∀ {a : Set} {{ara : AppRationals a}}
        -> C a
-e = smallExp one cheat
+e = smallExpQ one cheat
 {-# COMPILE AGDA2HS e #-}
 
+{-
+-- Now for real parameters, too.
+smallExp : ∀ {a : Set} {{ara : AppRationals a}}
+         -> (x : C a) -> @0 IsIn [ negate one , null ] x -> C a
+smallExp x isIn = proj₁' (bindC ({!!} :^: {!!})) x
+{-# COMPILE AGDA2HS smallExp #-}
+-}
 
 -- And other exponents can be calculated by transforming a smallExp.
 {-
