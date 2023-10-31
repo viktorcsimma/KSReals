@@ -42,7 +42,7 @@ open import Tools.Show
 postulate putStrLn : String → IO ⊤
 
 toCalc : DReal
-toCalc = smallExp (pos 1 :|^ pos 0) cheat
+toCalc = smallExpQ (pos 1 :|^ pos 0) cheat
 {-# COMPILE AGDA2HS toCalc #-}
 
 main : IO ⊤

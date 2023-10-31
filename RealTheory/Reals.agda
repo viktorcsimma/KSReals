@@ -51,17 +51,17 @@ prefixCon = _:^:_
 -- First, the compress function.
 -- This creates a real number equal to the original one,
 -- but with simpler a's returned by the embedded function.
-compress : ∀ {a : Set} {{ara : AppRationals a}} {{pra : PrelengthSpace a}}
+compress : ∀ {a : Set} {{ara : AppRationals a}}
                      -> C a -> C a
 compress = proj₁' (bindC (prefixCon (λ x -> MkC (λ ε -> appApprox x (ratLog2Floor (proj₁ ε) {proj₂ ε})) cheat) (WrapMod id cheat)))
     --     ^ actually, any modulus would be OK here (even λ _ -> null, but that's not allowed)
 {-# COMPILE AGDA2HS compress #-}
 
-@0 compressEq : ∀ {a : Set} {{ara : AppRationals a}} {{pra : PrelengthSpace a}}
+@0 compressEq : ∀ {a : Set} {{ara : AppRationals a}}
                      (x : C a) -> compress x ≃ x
 compressEq = cheat
 
-@0 NonNegR : ∀ {a : Set} {{ara : AppRationals a}} {{pra : PrelengthSpace a}}
+@0 NonNegR : ∀ {a : Set} {{ara : AppRationals a}}
                      -> C a -> Set
 NonNegR {a} x = ∀ (ε : PosRational) -> negate (proj₁ ε) ≤ cast {a} {Rational} (fun x ε)
 
@@ -72,7 +72,7 @@ negateR x = MkC (negate ∘ fun x) cheat
 {-# COMPILE AGDA2HS negateR #-}
 
 -- This too.
-plusR : ∀ {a : Set} {{ara : AppRationals a}} {{pra : PrelengthSpace a}}
+plusR : ∀ {a : Set} {{ara : AppRationals a}}
                      -> C a -> C a -> C a
 plusR x y = map2 (prefixCon
                     (λ x -> prefixCon
@@ -86,14 +86,14 @@ plusR x y = map2 (prefixCon
 {-# COMPILE AGDA2HS plusR #-}
 
 instance
-  leReals : ∀ {a : Set} {{ara : AppRationals a}} {{pra : PrelengthSpace a}}
+  leReals : ∀ {a : Set} {{ara : AppRationals a}}
                      -> Le (C a)
   Le._≤_ leReals x y = NonNegR (plusR y (negateR x))
   {-# COMPILE AGDA2HS leReals #-}
 
 -- This will be the decidable criterium for a natural
 -- to be a good witness for PosR.
-posRCrit : ∀ {a : Set} {{ara : AppRationals a}} {{pra : PrelengthSpace a}}
+posRCrit : ∀ {a : Set} {{ara : AppRationals a}}
                      -> C a -> Nat -> Bool
 -- 1 << (-n)  <  x(1 << (-n-1))
 posRCrit x n = ε <# cast (fun x (halvePos εpos))
@@ -106,7 +106,7 @@ posRCrit x n = ε <# cast (fun x (halvePos εpos))
   εpos = ε :&: cheat
 {-# COMPILE AGDA2HS posRCrit #-}
 
-@0 PosR : ∀ {a : Set} {{ara : AppRationals a}} {{pra : PrelengthSpace a}}
+@0 PosR : ∀ {a : Set} {{ara : AppRationals a}}
                      -> C a -> Set
 -- See Krebbers and Spitters' Prop-based _<_.
 -- This is erased; so we cannot extract n from it.
@@ -118,23 +118,23 @@ PosR x = Σ0 Nat
 
 -- We'll use these later;
 -- that's why we define them so early.
-maxR : ∀ {a : Set} {{ara : AppRationals a}} {{pra : PrelengthSpace a}}
+maxR : ∀ {a : Set} {{ara : AppRationals a}}
                      -> C a -> C a -> C a
 maxR {a} x y = map2 (second :^: WrapMod id cheat) (compress x) (compress y)
   where
   -- We need to add constraints again for Haskell
   -- (otherwise, it believes it's a different a without constraints).
-  second : ∀ {a : Set} {{ara : AppRationals a}} {{pra : MetricSpace a}}
+  second : ∀ {a : Set} {{ara : AppRationals a}}
       -> a -> UcFun a a
   second x = (λ y -> max x y) :^: WrapMod id cheat
 {-# COMPILE AGDA2HS maxR #-}
 
-minR : ∀ {a : Set} {{ara : AppRationals a}} {{pra : PrelengthSpace a}}
+minR : ∀ {a : Set} {{ara : AppRationals a}}
                      -> C a -> C a -> C a
 minR {a} x y = map2 (second :^: WrapMod id cheat) (compress x) (compress y)
   where
   -- Same here.
-  second : ∀ {a : Set} {{ara : AppRationals a}} {{pra : MetricSpace a}}
+  second : ∀ {a : Set} {{ara : AppRationals a}}
       -> a -> UcFun a a
   second x = (λ y -> min x y) :^: WrapMod id cheat
 {-# COMPILE AGDA2HS minR #-}
@@ -158,12 +158,12 @@ private
 
 instance
   -- We'll use this in NonZero.
-  ltReals : ∀ {a : Set} {{ara : AppRationals a}} {{pra : PrelengthSpace a}}
+  ltReals : ∀ {a : Set} {{ara : AppRationals a}}
                      -> Lt (C a)
   Lt._<_ ltReals x y = PosR (plusR y (negateR x)) 
   {-# COMPILE AGDA2HS ltReals #-}
 
-  strongSetoidReals : ∀ {a : Set} {{ara : AppRationals a}} {{pra : PrelengthSpace a}}
+  strongSetoidReals : ∀ {a : Set} {{ara : AppRationals a}}
                        -> StrongSetoid (C a)
   StrongSetoid.super strongSetoidReals = setoidC
   StrongSetoid._><_ strongSetoidReals x y = Either (x < y) (y < x)
@@ -173,11 +173,11 @@ instance
   StrongSetoid.><-tight-apart strongSetoidReals = cheat
   {-# COMPILE AGDA2HS strongSetoidReals #-}
 
-  semiRingReals : ∀ {a : Set} {{ara : AppRationals a}} {{pra : PrelengthSpace a}}
+  semiRingReals : ∀ {a : Set} {{ara : AppRationals a}}
                      -> SemiRing (C a)
   SemiRing.super semiRingReals = setoidC
   -- TODO: we should rewrite this with map2.
-  SemiRing._+_ (semiRingReals {a} {{ara = ara}} {{pra = pra}})
+  SemiRing._+_ (semiRingReals {a} {{ara = ara}})
                                  = plusR
   -- Now, we have to find a rational c such that y ∈ [-c,c].
   SemiRing._*_ (semiRingReals {a}) x y = let cx = compress x; cy = compress y in
@@ -216,7 +216,7 @@ instance
   SemiRing.*-distribʳ-+ semiRingReals = cheat
   {-# COMPILE AGDA2HS semiRingReals #-}
 
-  ringReals : ∀ {a : Set} {{ara : AppRationals a}} {{pra : PrelengthSpace a}}
+  ringReals : ∀ {a : Set} {{ara : AppRationals a}}
                      -> Ring (C a)
   Ring.super ringReals = semiRingReals
   Ring.negate ringReals = negateR
@@ -232,7 +232,7 @@ instance
   Abs.absCorrect absReals = cheat
   {-# COMPILE AGDA2HS absReals #-}
 
-  castCRat : ∀ {a : Set} {{ara : AppRationals a}} {{pra : PrelengthSpace a}}
+  castCRat : ∀ {a : Set} {{ara : AppRationals a}}
                  -> Cast (C a) (C Rational)
   Cast.cast castCRat x = MkC (λ ε -> cast (fun x ε)) cheat
   {-# COMPILE AGDA2HS castCRat #-}
@@ -243,13 +243,13 @@ PosRT : ∀ {@0 a : Set} {{@0 ara : AppRationals a}} {{@0 pra : PrelengthSpace a
 PosRT x = Σ0 PosRational λ ε -> proj₁ ε < cast (fun x ε)
 {-# COMPILE AGDA2HS PosRT #-}
 
-NonZeroRT : ∀ {@0 a : Set} {{@0 ara : AppRationals a}} {{@0 pra : PrelengthSpace a}}
+NonZeroRT : ∀ {@0 a : Set} {{@0 ara : AppRationals a}}
                       -> @0 C a -> Set
 NonZeroRT x = Either (PosRT x) (PosRT (negate x))
 {-# COMPILE AGDA2HS NonZeroRT #-}
 
 -- A _<_ based on that.
-LtT : ∀ {@0 a : Set} {{@0 ara : AppRationals a}} {{@0 pra : PrelengthSpace a}}
+LtT : ∀ {@0 a : Set} {{@0 ara : AppRationals a}}
                       -> @0 C a -> @0 C a -> Set
 LtT x y = PosRT (y + negate x)
 {-# COMPILE AGDA2HS LtT #-}
@@ -281,7 +281,7 @@ witness :: (Natural -> Bool) -> Σ0 Natural
 witness p = (:&:) (Prelude.until p (\ n -> shiftl n (1 :: Natural)) 1)
 #-}
 
-witnessForPos : ∀ {a : Set} {{ara : AppRationals a}} {{pra : PrelengthSpace a}}
+witnessForPos : ∀ {a : Set} {{ara : AppRationals a}}
                      -> (x : C a) -> @0 (PosR x) -> PosRT x
 witnessForPos x hyp = ε :&: cheat
   where
@@ -294,7 +294,7 @@ witnessForPos x hyp = ε :&: cheat
            :&: cheat
 {-# COMPILE AGDA2HS witnessForPos #-}
 
-witnessForNonZero : ∀ {a : Set} {{ara : AppRationals a}} {{pra : PrelengthSpace a}}
+witnessForNonZero : ∀ {a : Set} {{ara : AppRationals a}}
                      -> (x : C a) -> @0 (NonZero x) -> NonZeroRT x
 witnessForNonZero x hyp = sol
   where
@@ -325,7 +325,7 @@ witnessForNonZero x = sol
 #-}
 
 instance
-  fieldReals : ∀ {a : Set} {{ara : AppRationals a}} {{pra : PrelengthSpace a}}
+  fieldReals : ∀ {a : Set} {{ara : AppRationals a}}
                      -> Field (C a)
   Field.ring fieldReals = ringReals
   Field.strongSetoid fieldReals = strongSetoidReals

@@ -55,6 +55,10 @@ record AppRationals (aq : Set) : Set₁ where
     overlap {{natPow}} : Pow aq Nat
     overlap {{castAqRational}} : Cast aq Rational
     overlap {{castIntAq}} : Cast Int aq
+    -- We write PrelengthSpace here;
+    -- it is not necessary for the conditions,
+    -- but needed later.
+    overlap {{prelengthAq}} : PrelengthSpace aq
 
     -- Here, cast is a conversion to the "original" rationals.
     @0 aqToQOrderEmbed : OrderEmbedding (cast {aq} {Rational})

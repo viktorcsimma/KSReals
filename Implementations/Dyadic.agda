@@ -207,50 +207,6 @@ instance
   Abs.absCorrect absDyadic x = cheat , cheat
   {-# COMPILE AGDA2HS absDyadic #-}
 
-  -- And now...
-  appRationalsDyadic : AppRationals Dyadic
-  AppRationals.ring appRationalsDyadic = ringDyadic
-  AppRationals.partialOrder appRationalsDyadic = partialOrderDyadic
-  AppRationals.pseudoOrder appRationalsDyadic = pseudoOrderDyadic
-  AppRationals.strongSetoid appRationalsDyadic = strongSetoidDyadic
-  AppRationals.trivialApart appRationalsDyadic = trivialApartDyadic
-  AppRationals.exactShift appRationalsDyadic = exactShiftDyadic
-  AppRationals.natPow appRationalsDyadic = natPowDyadic
-  AppRationals.castAqRational appRationalsDyadic = castDyadicRational
-  AppRationals.castIntAq appRationalsDyadic = castIntDyadic
-
-
-  AppRationals.aqToQOrderEmbed appRationalsDyadic = ((λ _ _ eq -> eq) , λ _ _ le -> le) , ((λ _ _ eq -> eq) , λ _ _ le -> le)
-  AppRationals.aqToQStrictOrderEmbed appRationalsDyadic = ((λ _ _ eq -> eq) , id) , id
-  setoidMorphism (SemiRingMorphism.preserves-+ (AppRationals.aqToQSemiRingMorphism appRationalsDyadic)) = λ _ _ eq -> eq
-  preservesOp (SemiRingMorphism.preserves-+ (AppRationals.aqToQSemiRingMorphism appRationalsDyadic)) x y = cheat -- here, we could use the Rational instance
-  setoidMorphism (SemiRingMorphism.preserves-* (AppRationals.aqToQSemiRingMorphism appRationalsDyadic)) = λ _ _ eq -> eq
-  preservesOp (SemiRingMorphism.preserves-* (AppRationals.aqToQSemiRingMorphism appRationalsDyadic)) x y = cheat
-  SemiRingMorphism.preserves-null (AppRationals.aqToQSemiRingMorphism appRationalsDyadic) = refl
-  SemiRingMorphism.preserves-one (AppRationals.aqToQSemiRingMorphism appRationalsDyadic) = refl
-  AppRationals.aqNonZeroToNonZero appRationalsDyadic {pos (suc n) :|^ expo₁} NonZerox = cheat
-  AppRationals.aqNonZeroToNonZero appRationalsDyadic {negsuc n :|^ expo₁} NonZerox = cheat
-
-  -- https://github.com/coq-community/corn/blob/c08a0418f97a04ea7a6cdc3a930561cc8fc84d82/reals/faster/ARbigD.v#L265
-  -- (shift (mant x) (- (k-1) + expo x - expo y)) `quot` mant y :|^ (k-1)
-  -- But here, it was originally (k - 1) instead of k... why?
-  AppRationals.appDiv appRationalsDyadic x y NonZeroy k
-      = (intDiv (shift (mant x) (negate k + pos 1 + expo x + negate (expo y))) (mant y)) {NonZeroy} :|^ (k - pos 1)
-  AppRationals.appDivCorrect appRationalsDyadic = cheat
-
-  -- Actually, we wouldn't have to shift if we shifted leftwards, would we?
-  AppRationals.appApprox appRationalsDyadic x k = shift (mant x) (expo x - k + pos 1) :|^ (k - pos 1)
-  AppRationals.appApproxCorrect appRationalsDyadic = cheat
-
-  setoidMorphism (SemiRingMorphism.preserves-+ (AppRationals.intToAqSemiRingMorphism appRationalsDyadic)) _ _ refl = refl
-  preservesOp (SemiRingMorphism.preserves-+ (AppRationals.intToAqSemiRingMorphism appRationalsDyadic)) _ _ = cheat
-  setoidMorphism (SemiRingMorphism.preserves-* (AppRationals.intToAqSemiRingMorphism appRationalsDyadic)) _ _ refl = refl
-  preservesOp (SemiRingMorphism.preserves-* (AppRationals.intToAqSemiRingMorphism appRationalsDyadic)) _ _ = refl
-  SemiRingMorphism.preserves-null (AppRationals.intToAqSemiRingMorphism appRationalsDyadic) = refl
-  SemiRingMorphism.preserves-one (AppRationals.intToAqSemiRingMorphism appRationalsDyadic) = refl
-
-  {-# COMPILE AGDA2HS appRationalsDyadic #-}
-
   metricSpaceDyadic : MetricSpace Dyadic
   MetricSpace.setoid metricSpaceDyadic = setoidDyadic
   MetricSpace.ball metricSpaceDyadic ε x y = ball ε (dToQSlow x) (dToQSlow y)
@@ -343,3 +299,49 @@ instance
           step True  currPrec = 1         :|^ (negate 1 + currPrec)
           step False currPrec = negate 1  :|^ (negate 1 + currPrec)
   #-}
+
+
+  -- And now...
+  appRationalsDyadic : AppRationals Dyadic
+  AppRationals.ring appRationalsDyadic = ringDyadic
+  AppRationals.partialOrder appRationalsDyadic = partialOrderDyadic
+  AppRationals.pseudoOrder appRationalsDyadic = pseudoOrderDyadic
+  AppRationals.strongSetoid appRationalsDyadic = strongSetoidDyadic
+  AppRationals.trivialApart appRationalsDyadic = trivialApartDyadic
+  AppRationals.exactShift appRationalsDyadic = exactShiftDyadic
+  AppRationals.natPow appRationalsDyadic = natPowDyadic
+  AppRationals.castAqRational appRationalsDyadic = castDyadicRational
+  AppRationals.castIntAq appRationalsDyadic = castIntDyadic
+  AppRationals.prelengthAq appRationalsDyadic = prelengthSpaceDyadic
+
+
+  AppRationals.aqToQOrderEmbed appRationalsDyadic = ((λ _ _ eq -> eq) , λ _ _ le -> le) , ((λ _ _ eq -> eq) , λ _ _ le -> le)
+  AppRationals.aqToQStrictOrderEmbed appRationalsDyadic = ((λ _ _ eq -> eq) , id) , id
+  setoidMorphism (SemiRingMorphism.preserves-+ (AppRationals.aqToQSemiRingMorphism appRationalsDyadic)) = λ _ _ eq -> eq
+  preservesOp (SemiRingMorphism.preserves-+ (AppRationals.aqToQSemiRingMorphism appRationalsDyadic)) x y = cheat -- here, we could use the Rational instance
+  setoidMorphism (SemiRingMorphism.preserves-* (AppRationals.aqToQSemiRingMorphism appRationalsDyadic)) = λ _ _ eq -> eq
+  preservesOp (SemiRingMorphism.preserves-* (AppRationals.aqToQSemiRingMorphism appRationalsDyadic)) x y = cheat
+  SemiRingMorphism.preserves-null (AppRationals.aqToQSemiRingMorphism appRationalsDyadic) = refl
+  SemiRingMorphism.preserves-one (AppRationals.aqToQSemiRingMorphism appRationalsDyadic) = refl
+  AppRationals.aqNonZeroToNonZero appRationalsDyadic {pos (suc n) :|^ expo₁} NonZerox = cheat
+  AppRationals.aqNonZeroToNonZero appRationalsDyadic {negsuc n :|^ expo₁} NonZerox = cheat
+
+  -- https://github.com/coq-community/corn/blob/c08a0418f97a04ea7a6cdc3a930561cc8fc84d82/reals/faster/ARbigD.v#L265
+  -- (shift (mant x) (- (k-1) + expo x - expo y)) `quot` mant y :|^ (k-1)
+  -- But here, it was originally (k - 1) instead of k... why?
+  AppRationals.appDiv appRationalsDyadic x y NonZeroy k
+      = (intDiv (shift (mant x) (negate k + pos 1 + expo x + negate (expo y))) (mant y)) {NonZeroy} :|^ (k - pos 1)
+  AppRationals.appDivCorrect appRationalsDyadic = cheat
+
+  -- Actually, we wouldn't have to shift if we shifted leftwards, would we?
+  AppRationals.appApprox appRationalsDyadic x k = shift (mant x) (expo x - k + pos 1) :|^ (k - pos 1)
+  AppRationals.appApproxCorrect appRationalsDyadic = cheat
+
+  setoidMorphism (SemiRingMorphism.preserves-+ (AppRationals.intToAqSemiRingMorphism appRationalsDyadic)) _ _ refl = refl
+  preservesOp (SemiRingMorphism.preserves-+ (AppRationals.intToAqSemiRingMorphism appRationalsDyadic)) _ _ = cheat
+  setoidMorphism (SemiRingMorphism.preserves-* (AppRationals.intToAqSemiRingMorphism appRationalsDyadic)) _ _ refl = refl
+  preservesOp (SemiRingMorphism.preserves-* (AppRationals.intToAqSemiRingMorphism appRationalsDyadic)) _ _ = refl
+  SemiRingMorphism.preserves-null (AppRationals.intToAqSemiRingMorphism appRationalsDyadic) = refl
+  SemiRingMorphism.preserves-one (AppRationals.intToAqSemiRingMorphism appRationalsDyadic) = refl
+
+  {-# COMPILE AGDA2HS appRationalsDyadic #-}
