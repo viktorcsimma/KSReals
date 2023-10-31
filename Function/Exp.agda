@@ -1,13 +1,15 @@
--- A module for testing the library
--- with an unverified version
--- of the exponentiation function.
+-- The exponentiation function;
+-- built by first defining it
+-- on AppRationals in [-1,0],
+-- then on all AppRationals;
+-- and lifting this function.
 {-# OPTIONS --erasure #-}
 
 module Function.Exp where
 
 {-# FOREIGN AGDA2HS
 import qualified Prelude
-import Prelude (Integer)
+import Prelude (Integer, const)
 
 import Implementations.Int
 #-}
@@ -23,21 +25,25 @@ open import Algebra.MetricSpace
 open import Implementations.Nat
 open import Implementations.Int
 open import Implementations.Rational
+open import Operations.Abs
 open import Operations.Decidable
 open import Operations.Cast
+open import Operations.Pow
+open import Operations.ShiftL
 open import RealTheory.AppRationals
 open import RealTheory.Completion
+open import RealTheory.Continuity
 open import RealTheory.Reals
 open import RealTheory.Interval
 
-open import Haskell.Prim using (if_then_else_)
+open import Haskell.Prim using (if_then_else_; const; itsTrue)
 
 -- NOTE: this only works for -1≤x≤0.
 -- Now, we only define it for "rational" parameters.
 {-# TERMINATING #-}
 smallExpQ : ∀ {a : Set} {{ara : AppRationals a}}
-         -> (x : a) -> @0 IsIn [ negate one , null ] x -> C a
-smallExpQ {a} x _ = MkC (λ ε -> smallExpHelper 0 1 (firstPrec ε) one null (halvePos ε) x) cheat
+         -> Σ0 a (IsIn [ negate one , null ]) -> C a
+smallExpQ {a} (x :&: _) = MkC (λ ε -> smallExpHelper 0 1 (firstPrec ε) one null (halvePos ε) x) cheat
   where
   -- The trick is that we actually do it with a precision of ε/2,
   -- but the appDivs' precision will be ε/4, ε/8, ε/16 etc.
@@ -53,8 +59,8 @@ smallExpQ {a} x _ = MkC (λ ε -> smallExpHelper 0 1 (firstPrec ε) one null (ha
   smallExpHelper : ∀ {a : Set} {{ara : AppRationals a}}
          -> (k fact : Nat) (divPrec : Int) (powxk res : a) (ε : PosRational) (x : a) -> a
   smallExpHelper {a} k fact divPrec powxk res ε x =
-    if (nextFrac powxk) ≤# proj₁ ε   -- that's why it only works for -1≤x≤0
-      then res
+    if abs (nextFrac powxk) ≤# proj₁ ε   -- that's why it only works for -1≤x≤0; it uses the alternating series theorem
+      then res                           -- (see O'Connor for details)
       else smallExpHelper
             (1 + k)
             (fact * (1 + k))
@@ -80,26 +86,62 @@ smallExpQ {a} x _ = MkC (λ ε -> smallExpHelper 0 1 (firstPrec ε) one null (ha
 
 e : ∀ {a : Set} {{ara : AppRationals a}}
        -> C a
-e = smallExpQ one cheat
+e = recip (smallExpQ (negate one :&: cheat)) cheat
 {-# COMPILE AGDA2HS e #-}
 
-{-
--- Now for real parameters, too.
-smallExp : ∀ {a : Set} {{ara : AppRationals a}}
-         -> (x : C a) -> @0 IsIn [ negate one , null ] x -> C a
-smallExp x isIn = proj₁' (bindC ({!!} :^: {!!})) x
-{-# COMPILE AGDA2HS smallExp #-}
--}
+smallExpQUc : ∀ {a : Set} {{ara : AppRationals a}}
+                -> UcFun (Σ0 a (IsIn [ negate one , null ])) (C a)
+-- The modulus can be approximated from above
+-- by the largest derivative on the interval;
+-- which is e^0 = 1.
+smallExpQUc = smallExpQ :^: WrapMod (const (one :&: itsTrue)) cheat
+{-# COMPILE AGDA2HS smallExpQUc #-}
 
--- And other exponents can be calculated by transforming a smallExp.
+-- And now, we expand it to reals.
+smallExp : ∀ {a : Set} {{ara : AppRationals a}}
+                -> UcFun (C (Σ0 a (IsIn [ negate one , null ]))) (C a)
+smallExp = bindC {{prelengthInterval {I = [ negate one , null ]}}} smallExpQUc
+{-# COMPILE AGDA2HS smallExp #-}
+
+-- From Krebbers and Spitters:
 {-
-exp : ∀ {a : Set} {{ara : AppRationals a}} {{pra : PrelengthSpace a}}
-         -> (x : a) -> C a
-exp x =
-  if null <# x
-    then recip (exp (negate x)) cheat
-    else
-     (if x <# (negate one)
-        then {!let halfx = shiftl x (negsuc 0)!}
-        else smallExp x cheat)
+The series described in this section converge faster for arguments closer to 0. We use
+Equation 5.2 and 5.4 repeatedly to reduce the input to a value |x| ∈ [0, 2 k ). For 50 ≤ k,
+this yields nearly always major performance improvements, for higher precisions setting it
+to 75 ≤ k yields even better results.
 -}
+-- Maybe we should use that somehow.
+
+-- Now for any rational parameter.
+{-# TERMINATING #-}
+expQ : ∀ {a : Set} {{ara : AppRationals a}}
+         -> (x : a) -> C a
+expQ x = if (null <# x) then recip (expQ (negate x)) cheat
+         else (if (x <# negate one) then
+           (let exp2 = expQ (shift x (negsuc 0)) in exp2 * exp2)
+         else smallExpQ (x :&: cheat))
+{-# COMPILE AGDA2HS expQ #-}
+
+-- O'Connor's idea is that
+-- expQ is uniformly continuous on any ]-∞,upperBound], where upperBound ∈ ℤ.
+-- And then, for any real, upperBound will simply be the canonical bound.
+expQUc :  ∀ {a : Set} {{ara : AppRationals a}}
+           -> (upperBound : Int)
+           -> UcFun (Σ0 a (IsIn ]-∞, cast upperBound ])) (C a)
+expQUc upperBound = prefixCon  -- actually, this is _:^:_, but this helps agda2hs
+                    (λ x -> expQ (proj₁ x))
+                      (if upperBound ≤# null
+                      then WrapMod (λ ε -> (proj₁ ε) * shift one (negate upperBound) --ε*2⁻ᵘᴮ
+                                                   :&: cheat) cheat
+                      else WrapMod (λ ε -> (proj₁ ε) * MkFrac one (pos (hsFromIntegral 3 ^ natAbs upperBound)) cheat
+                                                   --ε*3⁻ᵘᴮ
+                                                   :&: cheat) cheat)
+{-# COMPILE AGDA2HS expQUc #-}
+
+-- And now, let's extend it.
+exp : ∀ {a : Set} {{ara : AppRationals a}}
+         -> (x : C a) -> C a
+exp x = proj₁' (bindC {{prelengthInterval {I = ]-∞, cast (canonicalBound x) ]}}}
+          (expQUc (canonicalBound x))) (MkC (λ ε -> fun x ε :&: cheat) cheat)
+        -- ^ this is simply x cast to C (Σ0 etc.)
+{-# COMPILE AGDA2HS exp #-}
