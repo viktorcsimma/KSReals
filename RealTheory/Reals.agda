@@ -101,7 +101,7 @@ posRCrit x n = ε <# cast (fun x (halvePos εpos))
   -- Since we use strict inequality in PosRT,
   -- we don't need to shift the right side more.
   ε : Rational
-  ε = shift (MkFrac (pos 1) (pos 1) tt) (negate (toInt (pos n)))
+  ε = shift (MkFrac (pos 1) (pos 1) tt) (negate (pos n))
   εpos : PosRational
   εpos = ε :&: cheat
 {-# COMPILE AGDA2HS posRCrit #-}
@@ -275,10 +275,12 @@ witness p (n :&: hyp) = go 1 n
   ... | false = go (suc n) (pred n0)
 -- Tried it with if-then-else, but then it got stuck at the next one.
 {-# FOREIGN AGDA2HS
--- Here we go faster, by shifting leftwards and thus increasing it exponentially
--- instead of just incrementing by one.
+-- Since posRCrit already uses shifting,
+-- we go here incrementally, too.
+-- This way, it remains correct
+-- even if there is only a finite amount of good witnesses.
 witness :: (Natural -> Bool) -> Σ0 Natural
-witness p = (:&:) (Prelude.until p (\ n -> shiftl n (1 :: Natural)) 1)
+witness p = (:&:) (Prelude.until p (1 +) 1)
 #-}
 
 witnessForPos : ∀ {a : Set} {{ara : AppRationals a}}
@@ -290,7 +292,7 @@ witnessForPos x hyp = ε :&: cheat
   n : Nat
   n = proj₁ natPack
   ε : PosRational
-  ε = shift (MkFrac (pos 1) (pos 1) tt) (toInt (negsuc n))
+  ε = shift (MkFrac (pos 1) (pos 1) tt) (negsuc n)
            :&: cheat
 {-# COMPILE AGDA2HS witnessForPos #-}
 
@@ -354,8 +356,26 @@ instance
     toLift = prefixCon
                (λ sx -> let x = proj₁ sx in
                    MkC (λ ε -> appDiv one x cheat (ratLog2Floor (proj₁ ε) {proj₂ ε})) cheat)
-               (WrapMod (λ _ -> t) cheat)
+               (WrapMod (λ ε -> proj₁ ε * proj₁ t * proj₁ t :&: cheat) cheat) -- are you sure?
+                                                                     -- O'Connor writes this,
+                                                                     -- but maybe AppRationals kick in
   Field.recip-proper fieldReals = cheat
   Field.*-inverseˡ fieldReals = cheat
   Field.*-inverseʳ fieldReals = cheat
   {-# COMPILE AGDA2HS fieldReals #-}
+
+-- The canonical bound is an integer which is guaranteed to be greater than x.
+-- Bishop defined it as the least integer greater than ∣ x(1) ∣ + 2;
+-- so he required it to be greater than ∣x∣ actually.
+-- For computations, it's more beneficial to have an approximation which can even be negative
+-- (and so more precise).
+-- E.g. we can give a larger modulus of continuity when having a smaller canonical bound.
+canonicalBound : ∀ {a : Set} {{ara : AppRationals a}}
+                     (x : C a) -> Int
+canonicalBound x = ceil (cast (fun x (one :&: itsTrue) + one + one)) + pos 1
+{-# COMPILE AGDA2HS canonicalBound #-}
+
+@0 canonicalBoundCorrect : ∀ {a : Set} {{ara : AppRationals a}}
+                           -> ∀(x : C a)
+                           -> x < returnC (cast (canonicalBound x))
+canonicalBoundCorrect = cheat

@@ -21,7 +21,7 @@ open import Tools.Cheat
 open import Agda.Builtin.Equality
 open import Agda.Builtin.Nat using (Nat; zero; suc)
 open import Agda.Builtin.Int using (Int; pos; negsuc)
-open import Haskell.Prim using (⊥; id)
+open import Haskell.Prim using (⊥; id; if_then_else_)
 open import Haskell.Prim.Tuple
 
 open import Tools.ErasureProduct
@@ -255,7 +255,23 @@ Rational = Frac Int
 -- But Data.Ratio would mean a performance boost.
 {-# COMPILE AGDA2HS Rational #-}
 
--- This also rounds downwards.
+truncate ceil floor : Rational -> Int
+truncate q = intQuot (num q) (den q) {denNotNull q}
+ceil q = if (intRem (num q) (den q) {denNotNull q} ≃# (pos zero))
+         then truncate q else truncate q + (if q <# null then negsuc 0 else pos 0)
+floor q = if (intRem (num q) (den q) {denNotNull q} ≃# (pos zero))
+         then truncate q else truncate q + (if q <# null then pos 0 else pos 1)
+{-# FOREIGN AGDA2HS
+-- quot rounds towards zero, div towards minus infinity.
+ceil :: Rational -> Integer
+ceil q = num q `Prelude.div` den q
+floor :: Rational -> Integer
+-- maybe this can be solved better
+floor q = if (num q `Prelude.mod` den q Prelude.== 0) then ceil q else ceil q + 1
+#-}
+-- TODO: correctness proofs for them
+
+-- This returns the floor of the logarithm.
 ratLog2Floor : (q : Rational) -> @0 {null < q} -> Int
 ratLog2Floor q = pos (Nat.natLog2Floor (natAbs (num q)) {cheat})
                     + negate (pos (Nat.natLog2Floor (natAbs (den q)) {cheat}))
@@ -272,7 +288,7 @@ multPos (p :&: 0<p) (q :&: 0<q) = (p * q) :&: cheat
 {-# COMPILE AGDA2HS plusPos #-}
 {-# COMPILE AGDA2HS multPos #-}
 halvePos : PosRational -> PosRational
-halvePos (p :&: 0<p) = shift p (toInt (negsuc 0)) :&: cheat
+halvePos (p :&: 0<p) = shift p (negsuc 0) :&: cheat
 {-# COMPILE AGDA2HS halvePos #-}
 
 {-

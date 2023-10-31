@@ -243,7 +243,7 @@ instance
        where
        goApprox : Rational -> Nat -> Nat
        goApprox q n = if q ≤# one then n
-                        else goApprox (shift q (toInt (negsuc 0))) (1 + n)
+                        else goApprox (shift q (hsFromIntegral (negsuc 0))) (1 + n)
      currPrec : Int
      currPrec = approx d1
      desiredPrec : Int
@@ -330,7 +330,7 @@ instance
   -- (shift (mant x) (- (k-1) + expo x - expo y)) `quot` mant y :|^ (k-1)
   -- But here, it was originally (k - 1) instead of k... why?
   AppRationals.appDiv appRationalsDyadic x y NonZeroy k
-      = (intDiv (shift (mant x) (negate k + pos 1 + expo x + negate (expo y))) (mant y)) {NonZeroy} :|^ (k - pos 1)
+      = (intQuot (shift (mant x) (negate k + pos 1 + expo x + negate (expo y))) (mant y)) {NonZeroy} :|^ (k - pos 1)
   AppRationals.appDivCorrect appRationalsDyadic = cheat
 
   -- Actually, we wouldn't have to shift if we shifted leftwards, would we?

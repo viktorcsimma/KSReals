@@ -55,15 +55,12 @@ open import Operations.Pow
 -- so we have to copy them from the standard library.
 
 -- Instead of type annotations:
-toInt toHsInt : Int -> Int
-toInt = id
-toHsInt = id
+hsFromIntegral : ∀ {a : Set} -> a -> a
+hsFromIntegral = id
+-- This means we want Haskell to handle something as an Integer.
 {-# FOREIGN AGDA2HS
-toInt :: Integral a => a -> Integer
-toInt = Prelude.fromIntegral
-
-toHsInt :: Integral a => a -> Prelude.Int
-toHsInt = Prelude.fromIntegral
+hsFromIntegral :: Natural -> Integer
+hsFromIntegral = Prelude.fromIntegral
 #-}
 
 private
@@ -142,17 +139,20 @@ halveInt : Int -> Int
 halveInt (pos n) = pos (halveNat n)
 halveInt (negsuc n) = negsuc (halveNat n)
 
--- Now this has to be public.
-intDiv : (x y : Int) -> @0 {y ≢+0} -> Int
-intDiv (pos m) (pos (suc n)) = pos (natDiv m (suc n))
-intDiv (pos m) (negsuc n) = intNegate (pos (natDiv m (suc n)))
-intDiv (negsuc m) (pos (suc n)) = intNegate (pos (natDiv (suc m) (suc n)))
-intDiv (negsuc m) (negsuc n) = pos (natDiv (suc m) (suc n))
+-- Now these have to be public.
+intQuot intRem : (x y : Int) -> @0 {y ≢+0} -> Int
+intQuot (pos m) (pos (suc n)) = pos (natDiv m (suc n))
+intQuot (pos m) (negsuc n) = intNegate (pos (natDiv m (suc n)))
+intQuot (negsuc m) (pos (suc n)) = intNegate (pos (natDiv (suc m) (suc n)))
+intQuot (negsuc m) (negsuc n) = pos (natDiv (suc m) (suc n))
+intRem x y {y≢+0} = intPlus x (intNegate (intTimes y (intQuot x y {y≢+0})))
 -- And we will use `quot` in Haskell (this rounds towards zero).
 -- (`div` would be uglier now.)
 {-# FOREIGN AGDA2HS
-intDiv :: Integer -> Integer -> Integer
-intDiv = Prelude.quot
+intQuot :: Integer -> Integer -> Integer
+intQuot = Prelude.quot
+intRem  :: Integer -> Integer -> Integer
+intRem  = Prelude.rem
 #-}
 
 natAbs : Int -> Nat
