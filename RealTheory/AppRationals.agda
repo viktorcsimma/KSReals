@@ -43,14 +43,14 @@ open import Operations.Cast
 
 record AppRationals (aq : Set) : Set₁ where
   field
-    overlap {{ring}} : Ring aq
+    -- overlap {{ring}} : Ring aq -- Abs includes this
     overlap {{partialOrder}} : PartialOrder aq
     overlap {{pseudoOrder}} : PseudoOrder aq
     overlap {{decLe}} : DecLe aq
     overlap {{decLt}} : DecLt aq
     overlap {{strongSetoid}} : StrongSetoid aq
     overlap {{trivialApart}} : TrivialApart aq
-    overlap {{absAq}} : Abs aq
+    overlap {{absAq}} : Abs aq -- we need this for alternating series
     overlap {{exactShift}} : ExactShift aq
     overlap {{natPow}} : Pow aq Nat
     overlap {{castAqRational}} : Cast aq Rational
@@ -93,7 +93,6 @@ open AppRationals {{...}} public
 
 instance
   appRationalsRational : AppRationals Rational
-  AppRationals.ring appRationalsRational = ringFrac
   AppRationals.partialOrder appRationalsRational = partialOrderFrac
   AppRationals.pseudoOrder appRationalsRational = pseudoOrderFrac
   AppRationals.strongSetoid appRationalsRational = strongSetoidFrac

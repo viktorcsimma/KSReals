@@ -1,6 +1,6 @@
 -- A main program for demonstrating that
 -- the implementation is indeed runnable.
-{-# OPTIONS --erasure #-}
+{-# OPTIONS --erasure --guardedness #-}
 
 {-# FOREIGN AGDA2HS
 import qualified Prelude
@@ -33,7 +33,7 @@ open import Implementations.Int
 open import Implementations.Rational
 open import Implementations.Dyadic
 open import Implementations.DyadicReal
-open import Function.Exp
+open import Functions.Exp
 open import Tools.Show
 
 postulate putStrLn : String → IO ⊤

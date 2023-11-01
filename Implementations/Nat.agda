@@ -14,6 +14,10 @@ import Operations.Pow
 
 -- Sometimes, Nat doesn't get rewritten to Natural.
 type Nat = Natural
+
+-- And to bypass suc:
+suc :: Natural -> Natural
+suc = (1 Prelude.+)
 #-}
 
 open import Agda.Builtin.Unit

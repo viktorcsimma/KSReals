@@ -303,11 +303,11 @@ instance
 
   -- And now...
   appRationalsDyadic : AppRationals Dyadic
-  AppRationals.ring appRationalsDyadic = ringDyadic
   AppRationals.partialOrder appRationalsDyadic = partialOrderDyadic
   AppRationals.pseudoOrder appRationalsDyadic = pseudoOrderDyadic
   AppRationals.strongSetoid appRationalsDyadic = strongSetoidDyadic
   AppRationals.trivialApart appRationalsDyadic = trivialApartDyadic
+  AppRationals.absAq appRationalsDyadic = absDyadic
   AppRationals.exactShift appRationalsDyadic = exactShiftDyadic
   AppRationals.natPow appRationalsDyadic = natPowDyadic
   AppRationals.castAqRational appRationalsDyadic = castDyadicRational
