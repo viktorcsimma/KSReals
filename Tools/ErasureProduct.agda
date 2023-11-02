@@ -17,6 +17,9 @@ record Σ0 {i j} (a : Set i) (@0 b : a → Set j) : Set (i ⊔ j) where
 open Σ0 public
 infixr 4 _:&:_
 {-# COMPILE AGDA2HS Σ0 newtype #-}
+{-# FOREIGN AGDA2HS
+infixr 4 :&:
+#-}
 
 ∃0 : ∀ {a b} {A : Set a} → @0 (A → Set b) → Set (a ⊔ b)
 ∃0 = Σ0 _            -- it makes strange things from this...
@@ -38,3 +41,6 @@ record Σ' {i j} (a : Set i) (b : @0 a → Set j) : Set (i ⊔ j) where
 open Σ' public
 infixr 4 _:^:_
 {-# COMPILE AGDA2HS Σ' #-}
+{-# FOREIGN AGDA2HS
+infixr 4 :^:
+#-}

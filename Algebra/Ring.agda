@@ -62,6 +62,12 @@ record SemiRing (a : Set) : Set₁ where
 open SemiRing {{...}} public
 {-# COMPILE AGDA2HS SemiRing class #-}
 
+-- Important: fixities don't get compiled by themselves now.
+{-# FOREIGN AGDA2HS
+infixl 6 +
+infixl 7 *
+#-}
+
 -- For the next one.
 -- Takes the role of SemiGroup_Morphism.
 record PreservesOp {a b : Set} {{setoida : Setoid a}} {{setoidb : Setoid b}}
