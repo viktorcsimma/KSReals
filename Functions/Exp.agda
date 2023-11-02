@@ -50,9 +50,9 @@ smallExpQ : ∀ {a : Set} {{ara : AppRationals a}}
          -> Σ0 a (IsIn [ negate one , null ]) -> C a
 -- The seed is going to be a Nat × Frac a tuple,
 -- containing the index of the step (starting from 1) and the previous fraction.
-smallExpQ {a} (x :&: _) = sumAlternatingStream
-                            (coiteStream snd (λ {(n , fra) -> suc n , MkFrac (num fra * x) (den fra * cast (pos n)) cheat}) (1 , one))
-                            cheat
+smallExpQ (x :&: _) = sumAlternatingStream
+                        (coiteStream snd (λ {(n , fra) -> suc n , MkFrac (num fra * x) (den fra * cast (pos n)) cheat}) (1 , one))
+                        cheat
 {-# COMPILE AGDA2HS smallExpQ #-}
 
 e : ∀ {a : Set} {{ara : AppRationals a}}

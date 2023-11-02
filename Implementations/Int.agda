@@ -23,9 +23,9 @@ import Implementations.Nat
 type Int = Integer
 
 -- And to bypass pos and negsuc:
-pos :: (Prelude.Integral a, Prelude.Integral b) => a -> b
+pos :: (Prelude.Integral a) => a -> Integer
 pos = Prelude.fromIntegral
-negsuc :: Integral a => Natural -> a
+negsuc :: (Prelude.Integral a) => a -> Integer
 negsuc x = Prelude.negate (1 Prelude.+ (Prelude.fromIntegral x))
 #-}
 

@@ -24,6 +24,7 @@ open import Tools.Cheat
 open import Tools.ErasureProduct
 open import Algebra.Ring
 open import Algebra.Field
+open import Operations.Cast
 open import Operations.ShiftL
 open import RealTheory.AppRationals
 open import RealTheory.Completion
@@ -33,18 +34,18 @@ open import Implementations.Int
 open import Implementations.Rational
 open import Implementations.Dyadic
 open import Implementations.DyadicReal
-open import Functions.Exp
+open import Functions.Trigonometric
 open import Tools.Show
 
 postulate putStrLn : String → IO ⊤
 
 toCalc : DReal
-toCalc = recip (smallExpQ (negate one :&: cheat)) cheat
+toCalc = pi
 {-# COMPILE AGDA2HS toCalc #-}
 
 main : IO ⊤
 main = putStrLn (show (fun toCalc
-                        (MkFrac (pos 1)
-                        (shift (pos 1) (hsFromIntegral (pos 33219)))  -- that is log₂ (10^10000)
-                           tt :&: itsTrue)))
+                        ((MkFrac (pos 1)
+                        (shift (pos 1) (pos 33219)) -- that is log₂ (10^10000)
+                           tt :&: itsTrue))))
 {-# COMPILE AGDA2HS main #-}
