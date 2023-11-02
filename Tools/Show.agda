@@ -12,6 +12,7 @@ import Implementations.Dyadic
 open import Agda.Builtin.Nat using (Nat; zero; suc; _==_)
 open import Agda.Builtin.Int using (Int; pos; negsuc)
 open import Agda.Builtin.List
+open import Haskell.Prelude using (reverse)
 open import Haskell.Prim.String
 open import Haskell.Prim.List
 open import Haskell.Prim.Show
@@ -21,60 +22,73 @@ open import Haskell.Prim using (const; if_then_else_)
 open import Algebra.Ring
 open import Implementations.Nat
 open import Implementations.Int
+open import Implementations.Decimal
 open import Implementations.Dyadic
 open import Implementations.Rational
 open import Operations.ShiftL
 open import Operations.Pow
 
--- We have to define this separately
--- for the sake of the termination checker.
-showDyadic : Dyadic -> String
-showDyadic (m :|^ pos zero) = show m
-showDyadic (m :|^ pos n) = show (m * shift one (pos n))
-showDyadic (m :|^ negsuc n) = sign m ++ showWithDecimalPoint
-                                                    (go (natAbs m) zero (suc n) zero)
-  where
-  sign : Int -> String
-  sign (pos _)    = []
-  sign (negsuc _) = '-' ∷ []
-
-  -- With every right shift, we multiply
-  -- the number to the right by 5 and
-  -- add 5000.. to it if we had a remainder of 1
-  -- at the left.
-  go : (left right : Nat) (stepsLeft : Nat) (stepsDone : Nat) -> Nat × Nat
-  go left right zero    _ = (left , right)
-  go left right (suc n) m = go (natDiv left 2)
-                               (5 * right
-                                  + (if (natMod left 2 == 1) then (5 * 10 ^ m) else 0))
-                               n (suc m)
-                               -- TODO : cut down the last zeroes;
-                               -- they don't represent a decimal precision
-  showWithDecimalPoint : Nat × Nat -> String
-  showWithDecimalPoint (left , right) = show left ++ '.' ∷ show right
--- Again, there are some dirty pattern matchings here; so...
 {-# FOREIGN AGDA2HS
-showDyadic :: Dyadic -> String
-showDyadic (m :|^ 0) = show m
-showDyadic (m :|^ n)
-  | n > 0     = show (m * 2 ^ n)
-  | otherwise = sign m ++ showWithDecimalPoint
-                                     (go (abs m) 0 (abs n) 0)
-  where
-  sign :: Integer -> String
-  sign x = if (0 > x) then "-" else ""
+import Numeric.Natural
 
-  go :: Integer -> Integer -> Integer -> Integer -> (Integer, Integer)
-  go left right 0    _ = (left , right)
-  go left right sucn m = go (quot left 2)
-                               (5 * right
-                                  + (if (rem left 2 == 1) then (5 * 10 ^ m) else 0))
-                               (sucn - 1) (m + 1)
-                               -- TODO : cut down the last zeroes;
-                               -- they don't represent a decimal precision
-  showWithDecimalPoint :: (Integer, Integer) -> String
-  showWithDecimalPoint (left, right) = show left ++ '.' : show right
+import Implementations.Decimal
 #-}
+
+-- Printing a Decimal.
+-- It will be much easier than to print a Dyadic
+-- because we only need to position the decimal point.
+showDecimal : Decimal -> String
+-- For performance reasons; if n is nonnegative, we don't reverse strings and such.
+showDecimal (MkDec m (pos n)) = show (m * pos 10 ^ n)
+showDecimal (MkDec m (negsuc n)) = go (suc n) (reverse (show m)) []
+  where
+  -- The two sides
+  -- represent where we are;
+  -- but the front of the list is the digit closest to us
+  -- (for performance reasons).
+  -- E.g. ("43210" , "56789") is "01234_56789".
+  go : Nat -> String -> String -> String
+  go zero [] [] = '0' ∷ []
+  go zero [] right = '0' ∷ '.' ∷ right
+  go zero left [] = reverse left
+  go zero left right = reverse left ++ '.' ∷ right
+  go (suc n) [] right = go n [] ('0' ∷ right)
+  go (suc n) (x ∷ left) right = go n left (x ∷ right)
+{-# FOREIGN AGDA2HS
+showDecimal :: Decimal -> String
+-- For performance reasons; if n is nonnegative, we don't reverse strings and such.
+showDecimal (MkDec m n)
+  | 0 <= n      = show (m * 10 ^ fromIntegral n)
+  | otherwise   = go (fromIntegral (abs n)) (reverse (show m)) []
+    where
+    -- The two sides
+    -- represent where we are;
+    -- but the front of the list is the digit closest to us
+    -- (for performance reasons).
+    -- E.g. ("43210" , "56789") is "01234_56789".
+    go :: Natural -> String -> String -> String
+    go 0 [] [] = '0' : []
+    go 0 [] right = '0' : '.' : right
+    go 0 left [] = reverse left
+    go 0 left right = reverse left ++ '.' : right
+    go sucn [] right = go (sucn - 1) [] ('0' : right)
+    go sucn (x : left) right = go (sucn - 1) left (x : right)
+#-}
+
+instance
+  iShowDecimal : Show Decimal
+  Show.show iShowDecimal = showDecimal
+  Show.showsPrec iShowDecimal _ x s = showDecimal x ++ s
+  Show.showList iShowDecimal = defaultShowList (const show)
+  {-# FOREIGN AGDA2HS
+  instance Show Decimal where
+    show = showDecimal
+  #-}
+
+-- And we simply convert a Dyadic to a Decimal first.
+showDyadic : Dyadic -> String
+showDyadic x = showDecimal (dyadicToDecimal x)
+{-# COMPILE AGDA2HS showDyadic #-}
 
 instance
   iShowDyadic : Show Dyadic
