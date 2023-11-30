@@ -42,18 +42,12 @@ open import Operations.ShiftL
 open import RealTheory.Completion
 open import RealTheory.Interval
 
--- agda2hs gets confused over this operator sometimes;
--- so we need a prefix version (simply using _:^:_ does not work there).
-prefixCon : ∀ {i} {j} {a : Set i} {b : @0 a → Set j} -> (x : a) -> b x -> Σ' a b
-prefixCon = _:^:_
-{-# COMPILE AGDA2HS prefixCon #-}
-
 -- First, the compress function.
 -- This creates a real number equal to the original one,
 -- but with simpler a's returned by the embedded function.
 compress : ∀ {a : Set} {{ara : AppRationals a}}
                      -> C a -> C a
-compress = proj₁' (bindC (prefixCon (λ x -> MkC (λ ε -> appApprox x (ratLog2Floor (proj₁ ε) {proj₂ ε})) cheat) (WrapMod id cheat)))
+compress = proj₁' (bindC (prefixCon (λ x -> MkC (λ ε -> appApprox x (ratLog2Floor (proj₁ ε) {proj₂ ε})) λ ε₁ ε₂ -> cheat) (WrapMod id cheat)))
     --     ^ actually, any modulus would be OK here (even λ _ -> null, but that's not allowed)
 {-# COMPILE AGDA2HS compress #-}
 
@@ -364,18 +358,65 @@ instance
   Field.*-inverseʳ fieldReals = cheat
   {-# COMPILE AGDA2HS fieldReals #-}
 
--- The canonical bound is an integer which is guaranteed to be greater than x.
--- Bishop defined it as the least integer greater than ∣ x(1) ∣ + 2;
--- so he required it to be greater than ∣x∣ actually.
--- For computations, it's more beneficial to have an approximation which can even be negative
--- (and so more precise).
--- E.g. we can give a larger modulus of continuity when having a smaller canonical bound.
+-- For shifting.
+-- We can use O'Connor's Theorem 29 here about multiplying with a constant.
+private
+  realShift : ∀ {a : Set} {{ara : AppRationals a}} -> C a -> Int -> C a
+  realShift x n = mapC
+                    (prefixCon
+                       (λ a -> shift a n)
+                       (WrapMod (λ ε -> shift (proj₁ ε) (negate n) :&: cheat)
+                               cheat))
+                    x
+  {-# COMPILE AGDA2HS realShift #-}
+
+instance
+  shiftLReals : ∀ {a : Set} {{ara : AppRationals a}}
+                     -> ShiftL (C a)
+  ShiftL.semiringa shiftLReals = semiRingReals
+  -- Maybe we should collect these uniformly continuous functions somewhere.
+  ShiftL.shiftl shiftLReals x n = realShift x (pos n)
+  ShiftL.shiftlProper shiftLReals = cheat
+  ShiftL.shiftlNull shiftLReals = cheat
+  ShiftL.shiftlSuc shiftLReals = cheat
+  {-# COMPILE AGDA2HS shiftLReals #-}
+
+  -- Similarly.
+  shiftReals : ∀ {a : Set} {{ara : AppRationals a}}
+                     -> Shift (C a)
+  Shift.super shiftReals = shiftLReals
+  Shift.shift shiftReals = realShift
+  Shift.shiftProper shiftReals = cheat
+  Shift.shiftEquivalent shiftReals = cheat
+  Shift.shiftLeftThenRight shiftReals = cheat
+  {-# COMPILE AGDA2HS shiftReals #-}
+
+-- And actually, if we are here,
+-- let's write a multiplication function
+-- with a constant AQ.
+multByAQ : ∀ {a : Set} {{ara : AppRationals a}}
+                 -> a -> C a -> C a
+multByAQ a = mapC ((λ b -> a * b) :^: WrapMod
+                                        (λ ε -> multPos ε
+                                                        ((if a ≃# null then (one :&: cheat) else (recip (cast (abs a)) cheat) :&: cheat)))
+                                        cheat)
+{-# COMPILE AGDA2HS multByAQ #-}
+
+@0 multByAQCorrect : ∀ {a : Set} {{ara : AppRationals a}}
+                         -> (q : a) (x : C a)
+                         -> multByAQ q x ≃ returnC q * x
+multByAQCorrect = cheat
+
+-- The canonical bound is an AQ which is guaranteed to be greater than or equal to x.
+-- Sometimes, it's more beneficial for it to be even negative;
+-- e.g. when we need an interval like ]-∞, canonicalBound x ].
+-- But you can use canonicalBound (abs x) if you need that.
 canonicalBound : ∀ {a : Set} {{ara : AppRationals a}}
-                     (x : C a) -> Int
-canonicalBound x = ceil (cast (fun x (one :&: itsTrue) + one + one)) + pos 1
+                     (x : C a) -> a
+canonicalBound x = fun (compress x) (one :&: itsTrue) + one
 {-# COMPILE AGDA2HS canonicalBound #-}
 
 @0 canonicalBoundCorrect : ∀ {a : Set} {{ara : AppRationals a}}
-                           -> ∀(x : C a)
-                           -> x < returnC (cast (canonicalBound x))
+                           -> ∀ (x : C a)
+                           -> x ≤ returnC (canonicalBound x)
 canonicalBoundCorrect = cheat

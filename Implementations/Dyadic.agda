@@ -9,6 +9,7 @@ import qualified Prelude
 import Prelude (Integer, Bool(..), id)
 
 import Tools.ErasureProduct
+import Operations.Decidable
 import Operations.ShiftL
 import Implementations.Int
 import Implementations.Rational
@@ -23,7 +24,7 @@ open import Agda.Builtin.Equality
 open import Agda.Builtin.Nat using (Nat; zero; suc)
 open import Agda.Builtin.Int using (Int; pos; negsuc)
 open import Haskell.Prim.Tuple
-open import Haskell.Prim using (id; if_then_else_)
+open import Haskell.Prim using (id; if_then_else_; IsTrue)
 
 open import Tools.Cheat
 
@@ -60,8 +61,38 @@ dToQSlow : Dyadic -> Rational
 dToQSlow d = MkFrac (mant d) (pos 1) tt * twoPowInt (expo d)
 {-# COMPILE AGDA2HS dToQSlow #-}
 
+-- Bringing two dyadics to the same exponent
+-- while retaining the values.
+-- This will be needed for deciding order.
+private
+  compare : (Int -> Int -> Bool) -> Dyadic -> Dyadic -> Bool
+  compare _##_ (m1 :|^ e1) (m2 :|^ e2) with (e1 <# e2)
+  ... | true = m1 ## shift m2 (e2 - e1)
+  ... | false = shift m1 (e1 - e2) ## m2
+  {-# FOREIGN AGDA2HS
+  compare :: (Int -> Int -> Bool) -> Dyadic -> Dyadic -> Bool
+  compare f (m1 :|^ e1) (m2 :|^ e2)
+    = if e1 <# e2
+      then f m1 (shift m2 (e2 - e1))
+      else f (shift m1 (e1 - e2)) m2
+  #-}
+
+  dEq dLe dLt : Dyadic -> Dyadic -> Bool
+  dEq = compare _≃#_
+  dLe = compare _≤#_
+  dLt = compare _<#_
+  {-# COMPILE AGDA2HS dEq #-}
+  {-# COMPILE AGDA2HS dLe #-}
+  {-# COMPILE AGDA2HS dLt #-}
+
+{-
+@0 simplifyCorrect : ∀(d : Dyadic) -> simplify d ≃ d
+simplifyCorrect = ?
+-}
+
 instance
-  -- We define equality by converting both sides to rationals.
+  -- We define the Set equality by converting both sides to rationals.
+  -- TODO: prove this is equivalent to the efficient version.
   setoidDyadic : Setoid Dyadic
   Setoid._≃_ setoidDyadic x y = dToQSlow x ≃ dToQSlow y
   Setoid.≃-refl setoidDyadic {x} = ≃-refl {x = num (dToQSlow x) * den (dToQSlow x)}
@@ -82,6 +113,13 @@ instance
   TrivialApart.super trivialApartDyadic = strongSetoidDyadic
   TrivialApart.trivialApart trivialApartDyadic x y = id , id
   {-# COMPILE AGDA2HS trivialApartDyadic #-}
+
+  -- But this is the efficient one.
+  decSetoidDyadic : DecSetoid Dyadic
+  DecSetoid.setoid decSetoidDyadic = setoidDyadic
+  DecSetoid._≃#_ decSetoidDyadic = dEq
+  DecSetoid.≃#-correct decSetoidDyadic = cheat
+  {-# COMPILE AGDA2HS decSetoidDyadic #-}
 
   semiRingDyadic : SemiRing Dyadic
   SemiRing.super semiRingDyadic = setoidDyadic
@@ -129,8 +167,8 @@ instance
 
   decLeDyadic : DecLe Dyadic
   DecLe.le decLeDyadic = leDyadic
-  DecLe._≤#_ decLeDyadic x y = dToQSlow x ≤# dToQSlow y
-  DecLe.≤#-correct decLeDyadic x y = ≤#-correct (dToQSlow x) (dToQSlow y)
+  DecLe._≤#_ decLeDyadic = dLe
+  DecLe.≤#-correct decLeDyadic x y = cheat
   {-# COMPILE AGDA2HS decLeDyadic #-}
 
   partialOrderDyadic : PartialOrder Dyadic
@@ -145,8 +183,8 @@ instance
 
   decLtDyadic : DecLt Dyadic
   DecLt.lt decLtDyadic = ltDyadic
-  DecLt._<#_ decLtDyadic x y = dToQSlow x <# dToQSlow y
-  DecLt.<#-correct decLtDyadic x y = <#-correct (dToQSlow x) (dToQSlow y)
+  DecLt._<#_ decLtDyadic = dLt
+  DecLt.<#-correct decLtDyadic x y = cheat
   {-# COMPILE AGDA2HS decLtDyadic #-}
   
   pseudoOrderDyadic : PseudoOrder Dyadic
@@ -163,13 +201,6 @@ instance
   ShiftL.shiftlProper shiftLDyadic = cheat
   ShiftL.shiftlNull shiftLDyadic = cheat
   ShiftL.shiftlSuc shiftLDyadic = cheat
-  {-
-  ShiftL.semiringa shiftLDyadic = semiRingDyadic
-  ShiftL.shiftl shiftLDyadic x n = mant x :|^ (n + expo x)
-  ShiftL.shiftlProper shiftLDyadic x x' y y' eqx refl = cheat
-  ShiftL.shiftlNull shiftLDyadic = cheat
-  ShiftL.shiftlSuc shiftLDyadic = cheat
-  -}
   {-# COMPILE AGDA2HS shiftLDyadic #-}
 
   shiftDyadic : Shift Dyadic
@@ -305,6 +336,7 @@ instance
   appRationalsDyadic : AppRationals Dyadic
   AppRationals.partialOrder appRationalsDyadic = partialOrderDyadic
   AppRationals.pseudoOrder appRationalsDyadic = pseudoOrderDyadic
+  AppRationals.decSetoid appRationalsDyadic = decSetoidDyadic
   AppRationals.strongSetoid appRationalsDyadic = strongSetoidDyadic
   AppRationals.trivialApart appRationalsDyadic = trivialApartDyadic
   AppRationals.absAq appRationalsDyadic = absDyadic
@@ -328,9 +360,8 @@ instance
 
   -- https://github.com/coq-community/corn/blob/c08a0418f97a04ea7a6cdc3a930561cc8fc84d82/reals/faster/ARbigD.v#L265
   -- (shift (mant x) (- (k-1) + expo x - expo y)) `quot` mant y :|^ (k-1)
-  -- But here, it was originally (k - 1) instead of k... why?
   AppRationals.appDiv appRationalsDyadic x y NonZeroy k
-      = (intQuot (shift (mant x) (negate k + pos 1 + expo x + negate (expo y))) (mant y)) {NonZeroy} :|^ (k - pos 1)
+      = intQuot (shift (mant x) (negate k + pos 1 + expo x + negate (expo y))) (mant y) {NonZeroy} :|^ (k - pos 1)
   AppRationals.appDivCorrect appRationalsDyadic = cheat
 
   -- Actually, we wouldn't have to shift if we shifted leftwards, would we?
@@ -340,8 +371,12 @@ instance
   setoidMorphism (SemiRingMorphism.preserves-+ (AppRationals.intToAqSemiRingMorphism appRationalsDyadic)) _ _ refl = refl
   preservesOp (SemiRingMorphism.preserves-+ (AppRationals.intToAqSemiRingMorphism appRationalsDyadic)) _ _ = cheat
   setoidMorphism (SemiRingMorphism.preserves-* (AppRationals.intToAqSemiRingMorphism appRationalsDyadic)) _ _ refl = refl
-  preservesOp (SemiRingMorphism.preserves-* (AppRationals.intToAqSemiRingMorphism appRationalsDyadic)) _ _ = refl
+  preservesOp (SemiRingMorphism.preserves-* (AppRationals.intToAqSemiRingMorphism appRationalsDyadic)) _ _ = cheat
   SemiRingMorphism.preserves-null (AppRationals.intToAqSemiRingMorphism appRationalsDyadic) = refl
   SemiRingMorphism.preserves-one (AppRationals.intToAqSemiRingMorphism appRationalsDyadic) = refl
+
+  AppRationals.log2Floor appRationalsDyadic (m :|^ k) 0<x = pos (natLog2Floor (natAbs m) {cheat}) + k
+  -- AppRationals.log2Floor appRationalsDyadic (negsuc n :|^ k) 0<x = {!!} -- we should derive a contradiction here
+  AppRationals.log2FloorCorrect appRationalsDyadic = cheat
 
   {-# COMPILE AGDA2HS appRationalsDyadic #-}

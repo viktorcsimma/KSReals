@@ -16,11 +16,13 @@ import Numeric.Natural
 
 import Algebra.Ring
 import Algebra.MetricSpace
+import Implementations.Int
 
 #-}
 
 open import Agda.Builtin.Nat using (Nat; zero; suc)
 open import Agda.Builtin.Int using (Int; pos; negsuc)
+open import Haskell.Prim.Tuple
 open import Haskell.Prim using (id; const)
 
 open import Tools.Cheat
@@ -46,6 +48,7 @@ record AppRationals (aq : Set) : Set₁ where
     -- overlap {{ring}} : Ring aq -- Abs includes this
     overlap {{partialOrder}} : PartialOrder aq
     overlap {{pseudoOrder}} : PseudoOrder aq
+    overlap {{decSetoid}} : DecSetoid aq
     overlap {{decLe}} : DecLe aq
     overlap {{decLt}} : DecLt aq
     overlap {{strongSetoid}} : StrongSetoid aq
@@ -88,13 +91,27 @@ record AppRationals (aq : Set) : Set₁ where
     -- cast is a given conversion from any Int to AQ (see the Cast Int aq instance above).
     @0 intToAqSemiRingMorphism : SemiRingMorphism {{semiRinga = semiRingInt}} (cast {Int} {aq})
 
+    -- and to be able to provide a representation-dependent implementation of log₂:
+    log2Floor : (x : aq) -> @0 (null < x) -> Int
+    @0 log2FloorCorrect : ∀ (x : aq) (@0 0<x : null < x)
+                                      -> shift one (log2Floor x 0<x) ≤ x
+                                          × x < shift one (pos 1 + (log2Floor x 0<x))
+
 open AppRationals {{...}} public
 {-# COMPILE AGDA2HS AppRationals class #-}
+
+-- For ease of use,
+-- we also derive the cast operator for naturals.
+instance
+  castNatAQ : ∀{aq}{{araq : AppRationals aq}} -> Cast Nat aq
+  Cast.cast castNatAQ n = cast (pos n)
+  {-# COMPILE AGDA2HS castNatAQ #-}
 
 instance
   appRationalsRational : AppRationals Rational
   AppRationals.partialOrder appRationalsRational = partialOrderFrac
   AppRationals.pseudoOrder appRationalsRational = pseudoOrderFrac
+  AppRationals.decSetoid appRationalsRational = decSetoidFrac
   AppRationals.strongSetoid appRationalsRational = strongSetoidFrac
   AppRationals.trivialApart appRationalsRational = trivialApartFrac
   AppRationals.absAq appRationalsRational = absFrac
@@ -111,4 +128,6 @@ instance
   AppRationals.appApprox appRationalsRational = const
   AppRationals.appApproxCorrect appRationalsRational = cheat
   AppRationals.intToAqSemiRingMorphism appRationalsRational = cheat
+  AppRationals.log2Floor appRationalsRational x 0<x = ratLog2Floor x {0<x}
+  AppRationals.log2FloorCorrect appRationalsRational = cheat
   {-# COMPILE AGDA2HS appRationalsRational #-}

@@ -20,3 +20,6 @@ record Pow (a : Set) {{semiringa : SemiRing a}} (b : Set) {{semiringb : SemiRing
     @0 powSuc  : ∀ x n -> x ^ (one + n) ≃ x * x ^ n
 open Pow {{...}} public
 {-# COMPILE AGDA2HS Pow class #-}
+{-# FOREIGN AGDA2HS
+infixr 8 ^
+#-}

@@ -75,6 +75,13 @@ instance
   Setoid.≃-trans (setoidFrac {a}) {x} {y} {z} x≃y y≃z = cheat
   {-# COMPILE AGDA2HS setoidFrac #-}
 
+  decSetoidFrac : ∀ {a : Set} {{semiRing : SemiRing a}} {{decSetoid : DecSetoid a}}
+                      -> DecSetoid (Frac a)
+  DecSetoid.setoid decSetoidFrac = setoidFrac
+  DecSetoid._≃#_ decSetoidFrac x y = num x * den y ≃# num y * den x
+  DecSetoid.≃#-correct decSetoidFrac = cheat
+  {-# COMPILE AGDA2HS decSetoidFrac #-}
+
   -- Here come the problems.
   -- It wants to use the _≃_ from the SemiRing instance,
   -- and I don't know how to convince it that it's equal

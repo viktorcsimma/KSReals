@@ -103,12 +103,14 @@ record Ring (a : Set) : Set₁ where
 open Ring {{...}} public
 {-# COMPILE AGDA2HS Ring class #-}
 
+infixl 6 _-_
 _-_ : {a : Set} -> {{Ring a}} -> a -> a -> a
 x - y = x + negate y
 -- agda2hs doesn't like it. We'll take a look at that later.
 {-# FOREIGN AGDA2HS
 (-) :: Ring a => a -> a -> a
 a - b = a + negate b
+infixl 6 -
 #-}
 
 -- A way to convert these to standard Haskell type classes?

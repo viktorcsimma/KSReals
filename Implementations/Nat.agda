@@ -3,6 +3,11 @@
 
 module Implementations.Nat where
 
+-- we have to put this into a separate pragma
+-- so that the parser can enable the extensions
+-- and recognise hashmarks
+{-# FOREIGN AGDA2HS {-# LANGUAGE MultiParamTypeClasses, MagicHash #-} #-}
+
 {-# FOREIGN AGDA2HS
 import qualified Prelude
 
@@ -11,6 +16,10 @@ import qualified Prelude
 import Algebra.Ring
 import Operations.Decidable
 import Operations.Pow
+
+-- For natLog2Floor.
+import GHC.Exts (Int( I# ))
+import GHC.Integer.Logarithms (integerLog2#)
 
 -- Sometimes, Nat doesn't get rewritten to Natural.
 type Nat = Natural
@@ -26,8 +35,6 @@ open Agda.Builtin.Nat hiding (_<_; _+_; _*_) -- that's built in for Nat, but is 
 open import Agda.Builtin.Equality
 open import Haskell.Prim.Tuple
 open import Haskell.Prim using (⊥; IsTrue; id; magic)
-
-{-# FOREIGN AGDA2HS {-# LANGUAGE MultiParamTypeClasses #-} #-}
 
 open import Tools.Cheat
 
@@ -52,6 +59,14 @@ natDiv :: Natural -> Natural -> Natural
 natDiv = Prelude.div
 natMod :: Natural -> Natural -> Natural
 natMod = Prelude.mod
+#-}
+
+-- To convert Integer literals to naturals:
+fromInteger : Nat -> Nat
+fromInteger n = n
+{-# FOREIGN AGDA2HS
+fromInteger :: Prelude.Integer -> Natural
+fromInteger = Prelude.fromInteger
 #-}
 
 instance
@@ -195,10 +210,12 @@ natLog2Floor : (n : Nat) -> @0 {NonZero n} -> Nat
 natLog2Floor (suc zero) = zero
 natLog2Floor n@(suc (suc _)) = suc (natLog2Floor (halveNat n))
 {-# FOREIGN AGDA2HS
+-- This is from the integer-logarithms package.
 natLog2Floor :: Natural -> Natural
 natLog2Floor 0 = Prelude.error "logarithm of 0 would be minus infinity"
-natLog2Floor 1 = 0
-natLog2Floor n = 1 Prelude.+ (natLog2Floor (Prelude.div n 2))
+natLog2Floor n = Prelude.fromIntegral
+                   (I# (integerLog2# (Prelude.fromIntegral n)))
+                     -- ^ this is a low-level logarithm function in Haskell's insides
 #-}
 
 @0 natLog2FloorLowerBound : ∀ (x : Nat) {@0 x≢0 : NonZero x} ->

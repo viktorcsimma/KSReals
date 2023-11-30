@@ -13,6 +13,7 @@ import Prelude (Integer, const, snd)
 
 import Implementations.Nat
 import Implementations.Int
+import RealTheory.Instances.Pow
 #-}
 
 open import Tools.Cheat
@@ -20,6 +21,7 @@ open import Tools.Cheat
 open import Agda.Builtin.Nat using (Nat; zero; suc)
 open import Agda.Builtin.Int using (Int; pos; negsuc)
 open import Haskell.Prim.Tuple
+import Haskell.Prelude using (seq)
 
 open import Tools.ErasureProduct
 open import Tools.Stream
@@ -39,6 +41,7 @@ open import RealTheory.AppRationals
 open import RealTheory.Completion
 open import RealTheory.Continuity
 open import RealTheory.Reals
+open import RealTheory.Instances.Pow
 open import RealTheory.Interval
 
 open import Haskell.Prim using (if_then_else_; const; itsTrue; id)
@@ -55,25 +58,6 @@ smallExpQ (x :&: _) = sumAlternatingStream
                         cheat
 {-# COMPILE AGDA2HS smallExpQ #-}
 
-e : ∀ {a : Set} {{ara : AppRationals a}}
-       -> C a
-e = recip (smallExpQ (negate one :&: cheat)) cheat
-{-# COMPILE AGDA2HS e #-}
-
-smallExpQUc : ∀ {a : Set} {{ara : AppRationals a}}
-                -> UcFun (Σ0 a (IsIn [ negate one , null ])) (C a)
--- The modulus can be approximated from above
--- by the largest derivative on the interval;
--- which is e^0 = 1.
-smallExpQUc = smallExpQ :^: WrapMod (const (one :&: itsTrue)) cheat
-{-# COMPILE AGDA2HS smallExpQUc #-}
-
--- And now, we expand it to reals.
-smallExp : ∀ {a : Set} {{ara : AppRationals a}}
-                -> UcFun (C (Σ0 a (IsIn [ negate one , null ]))) (C a)
-smallExp = bindC {{prelengthInterval {I = [ negate one , null ]}}} smallExpQUc
-{-# COMPILE AGDA2HS smallExp #-}
-
 -- From Krebbers and Spitters:
 {-
 The series described in this section converge faster for arguments closer to 0. We use
@@ -87,24 +71,32 @@ to 75 ≤ k yields even better results.
 {-# TERMINATING #-}
 expQ : ∀ {a : Set} {{ara : AppRationals a}}
          -> (x : a) -> C a
-expQ x = if (null <# x) then recip (expQ (negate x)) cheat
-         else (if (x <# negate one) then
-           (let exp2 = expQ (shift x (negsuc 0)) in exp2 * exp2)
+expQ x = -- K&S recommend 2^(-75) as an upper bound for high-precision calculations.
+         if (null <# x) then recip (expQ (negate x)) cheat
+         else (if (x <# shift (negate one) (negsuc 74)) then       -- maybe it will be quicker with a parameter closer to zero
+           (let exp2 = expQ (shift x (negsuc 0))
+             in (compress exp2 ^ fromInteger 2))
          else smallExpQ (x :&: cheat))
 {-# COMPILE AGDA2HS expQ #-}
+
+e : ∀ {a : Set} {{ara : AppRationals a}}
+       -> C a
+e = recip (smallExpQ (negate one :&: cheat)) cheat
+{-# COMPILE AGDA2HS e #-}
 
 -- O'Connor's idea is that
 -- expQ is uniformly continuous on any ]-∞,upperBound], where upperBound ∈ ℤ.
 -- And then, for any real, upperBound will simply be the canonical bound.
 expQUc :  ∀ {a : Set} {{ara : AppRationals a}}
-           -> (upperBound : Int)
+           -> (upperBound : a)
            -> UcFun (Σ0 a (IsIn ]-∞, cast upperBound ])) (C a)
-expQUc upperBound = prefixCon  -- actually, this is _:^:_, but this helps agda2hs
+expQUc upperBound = let intBound = ceil (cast upperBound) in
+                   prefixCon  -- actually, this is _:^:_, but this helps agda2hs
                     (λ x -> expQ (proj₁ x))
                       (if upperBound ≤# null
-                      then WrapMod (λ ε -> (proj₁ ε) * shift one (negate upperBound) --ε*2⁻ᵘᴮ
+                      then WrapMod (λ ε -> shift (proj₁ ε) (negate intBound) --ε*2⁻ᵘᴮ
                                                    :&: cheat) cheat
-                      else WrapMod (λ ε -> (proj₁ ε) * MkFrac one (pos (hsFromIntegral 3 ^ natAbs upperBound)) cheat
+                      else WrapMod (λ ε -> (proj₁ ε) * MkFrac one (pos (hsFromIntegral 3 ^ natAbs intBound)) cheat
                                                    --ε*3⁻ᵘᴮ
                                                    :&: cheat) cheat)
 {-# COMPILE AGDA2HS expQUc #-}
@@ -112,7 +104,10 @@ expQUc upperBound = prefixCon  -- actually, this is _:^:_, but this helps agda2h
 -- And now, let's extend it.
 exp : ∀ {a : Set} {{ara : AppRationals a}}
          -> (x : C a) -> C a
-exp x = proj₁' (bindC {{prelengthInterval {I = ]-∞, cast (canonicalBound x) ]}}}
-          (expQUc (canonicalBound x))) (MkC (λ ε -> fun x ε :&: cheat) cheat)
+exp x = let cx = compress x in
+        proj₁' (bindC {{prelengthInterval {I = ]-∞, canonicalBound cx ]}}}
+          (expQUc (canonicalBound cx)))
+          (MkC (λ ε -> fun x ε :&: cheat) cheat)
         -- ^ this is simply x cast to C (Σ0 etc.)
+        -- but compress just slows it down here! (I don't know why)
 {-# COMPILE AGDA2HS exp #-}

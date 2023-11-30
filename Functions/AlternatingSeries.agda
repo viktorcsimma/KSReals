@@ -12,16 +12,19 @@ open import Agda.Builtin.Nat using (Nat; zero; suc)
 open import Agda.Builtin.Int
 open import Agda.Builtin.Unit
 open import Haskell.Prim.Foldable using (foldr)
-open import Haskell.Prim.List
+open import Haskell.Prim.List hiding (tail)
 open import Haskell.Prim.Tuple
+open import Haskell.Prim using (itsTrue)
 
 open import Algebra.Order
 open import Algebra.Ring
+open import Implementations.Nat using (natLog2Floor)
 open import Implementations.Int
 open import Implementations.Rational
 open import Operations.Abs
 open import Operations.Cast
 open import Operations.Decidable
+open import Operations.ShiftL
 open import RealTheory.AppRationals
 open import RealTheory.Completion
 open import Tools.ErasureProduct
@@ -33,7 +36,7 @@ import Implementations.Nat
 import Implementations.Int
 #-}
 
--- From CoRN:
+-- From CoRN (reals/faster/ARAlternatingSum.v):
 {-
 The goal of this section is to compute the infinite alternating sum. Since
 we do not have a precise division operation, we want to postpone divisions as
@@ -70,16 +73,104 @@ sumAlternatingStream {a} xs hyp = MkC (rx xs) cheat
   -- We have to specify `a` again;
   -- otherwise, Haskell believes it's a different type.
   rx : {a : Set} {{ara : AppRationals a}} -> Stream (Frac a) -> PosRational -> a
-  rx xs ε = foldr _+_ null
-            ( map (λ fa -> appDiv (num fa) (den fa) (denNotNull fa) divPrec)
-            ( takeStream n xs))
+  rx {a} xs ε = foldr _+_ null
+                ( map (λ fa -> appDiv (num fa) (den fa) (denNotNull fa) divPrec)
+                ( takeStream n xs))
     where
+    logFloorε : Int
+    logFloorε = ratLog2Floor (proj₁ ε) {proj₂ ε}
+    -- See ARAlternatingSum.v.
+    -- shift one logFloorε is an underestimate of ε.
+    -- shift one (logFloorε - 1) is an underestimate of ε/2.
+    -- And we need not perform the approximate division,
+    -- since we can multiply the denominator
+    -- with shift one (logFloorε - 1).
+    -- And actually, this is equivalent
+    -- to simply shifting the denominator.
+    n : Nat
+    n = proj₁ (countWhile
+                 (λ _ fra ->
+                   shift (abs (den fra)) (logFloorε + negsuc 0)
+                     ≤# abs (num fra))
+                 xs cheat)
+
     -- First we have to count them to calculate the required precision;
     -- then we have to iterate again, execute the divisions and sum the results.
+
+    -- See Krebbers 5.1.
+    -- Here is the plan.
+    
+    -- ε*31/16 is quick to calculate. (It must be something a bit smaller than 2ε.)
+    -- Let underApp := appDiv (num (ε*15/16)) (div (ε*15/16)) (ratLog2Floor ε/32).
+    -- Then:
+    -- ε*29/32 ≤ underApp ≤ ε*31/32
+    -- 0 < ε*29/64 ≤ underApp/2 ≤ ε*31/64 < ε/2
+      -- Maybe this could be made even more precise.
+    -- We then write an efficient comparison for dyadics.
+    -- And then, we can use underApp/2 as the upper bound.
+    -- One more thing: what about ε/2k?
+    -- Its logarithm is largely OK; that is quick to compute.
+    
+    -- Then, an overapproximation of ε/2k.
+    -- Let overApp = appDiv (num (ε*17/16)) (div (ε*17/16)) (ratLog2Floor ε/32)
+    -- Then:
+    -- ε*33/32 ≤ overApp ≤ ε*35/32
+    -- ε/2 < ε*33/64 ≤ overApp/2 ≤ ε*35/64
+    -- ε/2k ≤ overApp/2k = overApp * 2 ^ (-log₂ k - 1) ≤ overApp * 2 ^ (- natLog2Floor k - 1) =
+    -- = shift overApp (- natLog2Floor k - 1)
+      -- Here, k must not be zero.
+      -- But - natLog2Floor (suc k) ≥ - natLog2Floor k - 1;
+      -- so we can correct it this way.
+    -- Let overAppp2k := shift overApp (- natLog2Floor (suc k)).
+    -- And let appFra := appDiv nₖ dₖ (ratLog2Floor ε/2k).
+      -- Here ratLog2Floor ε/2k ≥ ratLog2Floor ε - 1 - (1 + natLog2Floor k) =
+      -- = ratLog2Floor ε - natLog2Floor k - 2.
+      -- And we can freely put suc k there; we just increase the precision by that.
+    -- Finally:
+    -- |appFra + ε/2k| < ε/2
+    -- it's enough to see that
+    -- |appFra| + ε/2k < ε/2
+    -- |appFra| < ε/2 - ε/2k
+    -- , and it's enough to see that
+    -- |appFra| < underApp/2 - overAppp2k
+    -- |appFra| + overAppp2k < underApp/2
+    -- And now, both sides are dyadics.
+    -- They are both nonnegative, and the left side converges to zero;
+    -- so there will be a k for which the predicate is false.
+    {-
+    logFloorε : Int
+    logFloorε = ratLog2Floor (proj₁ ε) {proj₂ ε}
+    underApp : {a : Set} {{ara : AppRationals a}} -> a
+    underApp = let mulε = proj₁ (multPos ε (MkFrac (pos 15) (pos 16) tt :&: itsTrue)) in
+           appDiv (cast (num mulε)) (cast (den mulε)) cheat (logFloorε + (negsuc 4))
+    overApp : {a : Set} {{ara : AppRationals a}} -> a
+    overApp = let mulε = proj₁ (multPos ε (MkFrac (pos 17) (pos 16) tt :&: itsTrue)) in
+           appDiv (cast (num mulε)) (cast (den mulε)) cheat (logFloorε + (negsuc 4))
     n : Nat
-    n = proj₁ (countWhile (λ fra -> cast (den (abs fra)) * (proj₁ (halvePos ε)) <# cast (num (abs fra))) xs (proj₁ (snd (snd hyp) (halvePos ε)) :&: cheat))
-    -- "...we can approximate the n divisions at precision 2^k such as n*2^k < epsilon/2."
-    -- For now, we'll divide by suc n so as to be sure that n is not zero.
+    n = proj₁ (countWhile (λ k fra -> let appFra = appDiv (num fra) (den fra) (denNotNull fra) (logFloorε - pos (natLog2Floor (suc k)) + negsuc 1); overAppp2k = shift overApp (negate (pos (natLog2Floor (suc k))))
+                                      in shift underApp (negsuc 0)
+                                           ≤# abs appFra + overAppp2k)
+                          xs
+                          cheat)
+    -}
+    {-
+    n = proj₁ (countWhile (λ k fra -> proj₁ (halvePos ε) ≤# testBound k fra)
+                          (tail xs) -- we start from one because of the denominator
+                          cheat
+                          1) -- the starting index
+       where
+       εp2k : Nat -> PosRational
+       εp2k k = multPos ε (MkFrac (pos 1) (pos (shiftl k 1)) cheat :&: itsTrue)
+       testBound : {a : Set} {{ara : AppRationals a}} -> Nat -> Frac a -> Rational
+       testBound {a} k fra = abs (cast {a} {Rational}
+                                    (appDiv (num fra) (den fra) (denNotNull fra)
+                                       ((pos 1) + (ratLog2Floor (proj₁ (εp2k k)) {proj₂ (εp2k k)})))
+                                  + proj₁ (εp2k k))
+    -}
     divPrec : Int
-    divPrec = ratLog2Floor (proj₁ (halvePos ε) * MkFrac (pos 1) (pos (suc n)) tt) {cheat}
+    divPrec = logFloorε + negsuc 0 + negsuc (natLog2Floor (suc n))
+    -- natLog2Floor would round it in the wrong direction
+    -- and suc n is needed for the sake of the logarithm
+    -- divPrec = ratLog2Floor (proj₁ (halvePos ε) * MkFrac (pos 1) (pos (suc n)) tt) {cheat}
 {-# COMPILE AGDA2HS sumAlternatingStream #-}
+

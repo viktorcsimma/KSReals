@@ -15,22 +15,19 @@ import Algebra.Ring
 
 open import Agda.Builtin.Unit
 open import Agda.Builtin.Int using (Int; pos; negsuc)
-open import Haskell.Prim.Functor
-open import Haskell.Prim.Applicative
-open import Haskell.Prim.Monad
-open Do -- we want agda2hs to use do-notation
 open import Haskell.Prim.Tuple
 open import Haskell.Prim using (_∘_; const; id)
 
 open import Tools.Cheat
 
 open import Tools.ErasureProduct
+open import Algebra.MetricSpace
 open import Algebra.Setoid
 open import Algebra.Ring
 open import Algebra.Order
 open import Implementations.Int
 open import Implementations.Rational
-open import Algebra.MetricSpace
+open import Operations.Cast
 open import RealTheory.Continuity
 open import RealTheory.Interval
 
@@ -64,6 +61,18 @@ returnC : ∀ {a : Set} {{prelengthSpace : PrelengthSpace a}}
 returnC {a} x = MkC (const x)
                     λ ε₁ ε₂ -> ballReflexive (plusPos ε₁ ε₂) x x (≃-refl {a})
 {-# COMPILE AGDA2HS returnC #-}
+
+-- For ease of use,
+-- we define cast operators
+-- with the help of returnC.
+{-
+This conflicts with castNatAQ for some reason.
+instance
+  castC : ∀ {a b : Set} {{prelengthSpace : PrelengthSpace b}}
+                -> {{Cast a b}} -> Cast a (C b)
+  Cast.cast castC x = returnC (cast x)
+  {-# COMPILE AGDA2HS castC #-}
+-}
 
 instance
   setoidC : ∀ {a : Set} {{psa : MetricSpace a}} -> Setoid (C a)
@@ -142,7 +151,7 @@ instance
   -- {-# COMPILE AGDA2HS prelengthΣ0 #-} -- GHC sees this as a duplicate of the next instance
 
   -- the instance must not have the same name as the function!
-  prelengthInterval : ∀ {a : Set} {{prelengtha : PrelengthSpace a}} {{le : Le a}}
+  prelengthInterval : ∀ {a : Set} {{prelengtha : PrelengthSpace a}} {{le : Le a}} {{lt : Lt a}}
                {@0 I : Interval a}
                -> PrelengthSpace (Σ0 a (IsIn I))
   PrelengthSpace.metricSpace prelengthInterval = metricΣ0

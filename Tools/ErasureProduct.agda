@@ -44,3 +44,9 @@ infixr 4 _:^:_
 {-# FOREIGN AGDA2HS
 infixr 4 :^:
 #-}
+
+-- agda2hs gets confused over this operator sometimes;
+-- so we need a prefix version (simply using _:^:_ does not work there).
+prefixCon : ∀ {i} {j} {a : Set i} {b : @0 a → Set j} -> (x : a) -> b x -> Σ' a b
+prefixCon = _:^:_
+{-# COMPILE AGDA2HS prefixCon #-}
