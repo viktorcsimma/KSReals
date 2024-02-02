@@ -2,6 +2,11 @@
 -- the implementation is indeed runnable.
 {-# OPTIONS --erasure --guardedness #-}
 
+module AgdaMain where
+
+-- For being able to link with C++ code.
+{-# FOREIGN AGDA2HS {-# LANGUAGE ForeignFunctionInterface #-} #-}
+
 {-# FOREIGN AGDA2HS
 import Prelude (Integer, putStrLn)
 import Implementations.Int (pos)
@@ -50,6 +55,9 @@ toCalc : DReal
 toCalc = exp (returnC (pos 1000 :|^ null))
 {-# COMPILE AGDA2HS toCalc #-}
 
-main : Agda.Builtin.IO.IO ⊤
-main = putStrLn (Haskell.Prim.Show.show (fun toCalc (prec :&: Haskell.Prim.itsTrue)))
-{-# COMPILE AGDA2HS main #-}
+{-# FOREIGN AGDA2HS
+foreign export ccall agdaMain :: Prelude.IO ()
+ #-}
+agdaMain : Agda.Builtin.IO.IO ⊤
+agdaMain = putStrLn (Haskell.Prim.Show.show (fun toCalc (prec :&: Haskell.Prim.itsTrue)))
+{-# COMPILE AGDA2HS agdaMain #-}

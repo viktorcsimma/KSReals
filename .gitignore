@@ -6,3 +6,5 @@ MAlonzo/**
 *.o
 *.prof
 Main
+a.out
+*_stub.h
