@@ -24,7 +24,7 @@ open import Agda.Builtin.Equality
 open import Agda.Builtin.Nat using (Nat; zero; suc)
 open import Agda.Builtin.Int using (Int; pos; negsuc)
 open import Haskell.Prim.Tuple
-open import Haskell.Prim using (id; if_then_else_; IsTrue)
+open import Haskell.Prim using (id; if_then_else_; IsTrue; the)
 
 open import Tools.Cheat
 
@@ -274,7 +274,7 @@ instance
        where
        goApprox : Rational -> Nat -> Nat
        goApprox q n = if q ≤# one then n
-                        else goApprox (shift q (hsFromIntegral (negsuc 0))) (1 + n)
+                        else goApprox (shift q (the Int (negsuc 0))) (1 + n)
      currPrec : Int
      currPrec = approx d1
      desiredPrec : Int

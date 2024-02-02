@@ -21,6 +21,7 @@ open import Tools.Cheat
 open import Agda.Builtin.Nat using (Nat; zero; suc)
 open import Agda.Builtin.Int using (Int; pos; negsuc)
 open import Haskell.Prim.Tuple
+open import Haskell.Prim using (the)
 import Haskell.Prelude using (seq)
 
 open import Tools.ErasureProduct
@@ -75,7 +76,7 @@ expQ x = -- K&S recommend 2^(-75) as an upper bound for high-precision calculati
          if (null <# x) then recip (expQ (negate x)) cheat
          else (if (x <# shift (negate one) (negsuc 74)) then       -- maybe it will be quicker with a parameter closer to zero
            (let exp2 = expQ (shift x (negsuc 0))
-             in (compress exp2 ^ fromInteger 2))
+             in (compress exp2 ^ the Nat 2))
          else smallExpQ (x :&: cheat))
 {-# COMPILE AGDA2HS expQ #-}
 
@@ -96,7 +97,7 @@ expQUc upperBound = let intBound = ceil (cast upperBound) in
                       (if upperBound ≤# null
                       then WrapMod (λ ε -> shift (proj₁ ε) (negate intBound) --ε*2⁻ᵘᴮ
                                                    :&: cheat) cheat
-                      else WrapMod (λ ε -> (proj₁ ε) * MkFrac one (pos (hsFromIntegral 3 ^ natAbs intBound)) cheat
+                      else WrapMod (λ ε -> (proj₁ ε) * MkFrac one (pos (the Nat 3 ^ natAbs intBound)) cheat
                                                    --ε*3⁻ᵘᴮ
                                                    :&: cheat) cheat)
 {-# COMPILE AGDA2HS expQUc #-}

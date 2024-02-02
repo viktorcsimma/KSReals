@@ -61,14 +61,6 @@ natMod :: Natural -> Natural -> Natural
 natMod = Prelude.mod
 #-}
 
--- To convert Integer literals to naturals:
-fromInteger : Nat -> Nat
-fromInteger n = n
-{-# FOREIGN AGDA2HS
-fromInteger :: Prelude.Integer -> Natural
-fromInteger = Prelude.fromInteger
-#-}
-
 instance
   setoidNat : Setoid Nat
   setoidNat ._≃_ = _≡_

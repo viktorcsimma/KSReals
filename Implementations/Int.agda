@@ -22,11 +22,11 @@ import Implementations.Nat
 -- Sometimes, Int doesn't get rewritten to Integer.
 type Int = Integer
 
--- And to bypass pos and negsuc:
-pos :: (Prelude.Integral a) => a -> Integer
+-- And to bypass the case where "pos" or "negsuc" remains in the code:
+pos :: Natural -> Integer
 pos = Prelude.fromIntegral
-negsuc :: (Prelude.Integral a) => a -> Integer
-negsuc x = Prelude.negate (1 Prelude.+ (Prelude.fromIntegral x))
+negsuc :: Natural -> Integer
+negsuc x = Prelude.fromIntegral x - 1
 #-}
 
 open import Tools.Cheat
@@ -53,15 +53,6 @@ open import Operations.Pow
 
 -- Here, the operators are not pre-defined;
 -- so we have to copy them from the standard library.
-
--- Instead of type annotations:
-hsFromIntegral : ∀ {a : Set} -> a -> a
-hsFromIntegral = id
--- This means we want Haskell to handle something as an Integer.
-{-# FOREIGN AGDA2HS
-hsFromIntegral :: Natural -> Integer
-hsFromIntegral = Prelude.fromIntegral
-#-}
 
 private
   intNegate : Int -> Int
