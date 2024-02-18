@@ -4,7 +4,7 @@
 
 module RealTheory.Instances.Pow where
 
-open import Tools.Cheat
+open import Tool.Cheat
 
 open import Agda.Builtin.Nat using (Nat; zero; suc)
 open import Agda.Builtin.Int using (Int; pos; negsuc)
@@ -13,34 +13,37 @@ open import Haskell.Prim using (id; itsTrue)
 open import Algebra.Field
 open import Algebra.MetricSpace
 open import Algebra.Order
+open import Algebra.SemiRing
 open import Algebra.Ring
-open import Implementations.Nat
-open import Implementations.Int
-open import Implementations.Rational
-open import Operations.Abs
-open import Operations.Cast
-open import Operations.Decidable
-open import Operations.Pow
-open import RealTheory.AppRationals
+open import Implementation.Nat
+open import Implementation.Int
+open import Implementation.Frac
+open import Implementation.Rational
+open import Operator.Abs
+open import Operator.Cast
+open import Operator.Decidable
+open import Operator.Pow
+open import RealTheory.AppRational
 open import RealTheory.Completion
 open import RealTheory.Continuity
 open import RealTheory.Interval
 open import RealTheory.Reals
-open import Tools.ErasureProduct
+open import Tool.ErasureProduct
 
 {-# FOREIGN AGDA2HS
 import qualified Prelude
 
 import Algebra.Field
+import Algebra.SemiRing
 import Algebra.Ring
-import Implementations.Nat
-import Operations.Cast
-import Operations.Pow
+import Implementation.Nat
+import Operator.Cast
+import Operator.Pow
 import RealTheory.Continuity
-import Tools.ErasureProduct
+import Tool.ErasureProduct
 #-}
 
-ucNatPower : ∀ {a : Set} {{ara : AppRationals a}}
+ucNatPower : ∀ {a : Set} {{ara : AppRational a}}
                -> (c : a) -- an upper bound; x can only be in [-c,c] to preserve uniform continuity
                -> (n : Nat) -- the exponent
                -> UcFun (Σ0 a (IsIn [ negate c , c ])) a
@@ -49,13 +52,13 @@ ucNatPower c n@(suc nm1) = (λ Σx -> proj₁ Σx ^ n)               -- v this i
                               :^: WrapMod (λ ε -> proj₁ ε * recip (cast n * cast (c ^ nm1)) cheat :&: cheat )
                                           cheat
 {-# FOREIGN AGDA2HS
-ucNatPower :: AppRationals a => a -> Nat -> UcFun (Σ0 a) a
+ucNatPower :: AppRational a => a -> Nat -> UcFun (Σ0 a) a
 ucNatPower _ 0 = prefixCon proj₁ (WrapMod Prelude.id)
 ucNatPower c n = prefixCon (\ sx -> proj₁ sx ^ n) (WrapMod (\ ε -> (:&:) (proj₁ ε * recip (cast n * cast (c ^ (n Prelude.- 1))))))
 #-}
 
 instance
-  powRealNat : ∀ {a : Set} {{ara : AppRationals a}}
+  powRealNat : ∀ {a : Set} {{ara : AppRational a}}
                -> Pow (C a) Nat
   Pow._^_ (powRealNat {a}) x n = let cx = compress x; bound = canonicalBound x
                            in mapC {{prelengthInterval {a} {[ negate bound , bound ]}}}

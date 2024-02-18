@@ -7,22 +7,24 @@ module Algebra.MetricSpace where
 import qualified Prelude
 import Prelude (Integer)
 
-import Implementations.Rational
+import Implementation.Rational
 #-}
 
-open import Tools.Cheat
+open import Tool.Cheat
 
 open import Haskell.Prim.Tuple
 open import Haskell.Prim using (if_then_else_)
 
-open import Tools.ErasureProduct
+open import Tool.ErasureProduct
 open import Algebra.Setoid
+open import Algebra.SemiRing
 open import Algebra.Ring
-open import Implementations.Int
-open import Implementations.Rational
+open import Implementation.Int
+open import Implementation.Frac
+open import Implementation.Rational
 open import Algebra.Order
-open import Operations.Abs
-open import Operations.Decidable
+open import Operator.Abs
+open import Operator.Decidable
 
 record MetricSpace (a : Set) : Set₁ where
   field

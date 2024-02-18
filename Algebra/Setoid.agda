@@ -8,7 +8,7 @@ open import Haskell.Prim using (⊥)
 open import Haskell.Prim.Tuple
 open import Haskell.Prim.Either
 
-open import Tools.Relations
+open import Tool.Relations
 
 record Setoid (a : Set) : Set₁ where
   infix 3 _≃_

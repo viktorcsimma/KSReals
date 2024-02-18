@@ -8,8 +8,9 @@ module RealTheory.Completion where
 import qualified Prelude
 import Prelude (Integer, const, (.))
 
-import Implementations.Int
-import Implementations.Rational
+import Implementation.Int
+import Implementation.Rational
+import Algebra.SemiRing
 import Algebra.Ring
 #-}
 
@@ -18,16 +19,18 @@ open import Agda.Builtin.Int using (Int; pos; negsuc)
 open import Haskell.Prim.Tuple
 open import Haskell.Prim using (_∘_; const; id)
 
-open import Tools.Cheat
+open import Tool.Cheat
 
-open import Tools.ErasureProduct
+open import Tool.ErasureProduct
 open import Algebra.MetricSpace
 open import Algebra.Setoid
+open import Algebra.SemiRing
 open import Algebra.Ring
 open import Algebra.Order
-open import Implementations.Int
-open import Implementations.Rational
-open import Operations.Cast
+open import Implementation.Int
+open import Implementation.Frac
+open import Implementation.Rational
+open import Operator.Cast
 open import RealTheory.Continuity
 open import RealTheory.Interval
 

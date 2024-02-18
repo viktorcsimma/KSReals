@@ -7,8 +7,8 @@ open import Agda.Builtin.Unit
 
 open import Algebra.Order
 open import Algebra.MetricSpace
-open import Implementations.Rational
-open import Tools.ErasureProduct
+open import Implementation.Rational
+open import Tool.ErasureProduct
 
 {-
 -- Actually, we don't need subsets here.

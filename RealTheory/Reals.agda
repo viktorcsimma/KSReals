@@ -1,5 +1,5 @@
 -- Some common operations on real number types
--- (AppRationals types in the C monad).
+-- (AppRational types in the C monad).
 {-# OPTIONS --erasure #-}
 
 module RealTheory.Reals where
@@ -8,10 +8,11 @@ module RealTheory.Reals where
 import qualified Prelude
 import Prelude (Integer, Either(..), Bool(..), id, (.))
 
-import Operations.ShiftL
-import Implementations.Int
-import Implementations.Rational
-import RealTheory.AppRationals
+import Operator.ShiftL
+import Operator.Shift
+import Implementation.Int
+import Implementation.Rational
+import RealTheory.AppRational
 #-}
 
 open import Agda.Builtin.Equality
@@ -22,40 +23,43 @@ open import Agda.Builtin.Int using (Int; pos; negsuc)
 open import Haskell.Prim using (_∘_; id; itsTrue; if_then_else_)
 open import Haskell.Prim.Either
 
-open import Tools.Cheat
+open import Tool.Cheat
 
-open import Tools.ErasureProduct
+open import Tool.ErasureProduct
 open import Algebra.Setoid
-open import Implementations.Nat
-open import Implementations.Int
-open import Implementations.Rational
-open import RealTheory.AppRationals
+open import Implementation.Nat
+open import Implementation.Int
+open import Implementation.Frac
+open import Implementation.Rational
+open import RealTheory.AppRational
 open import Algebra.MetricSpace
 open import RealTheory.Continuity
+open import Algebra.SemiRing
 open import Algebra.Ring
 open import Algebra.Field
 open import Algebra.Order
-open import Operations.Decidable
-open import Operations.Abs
-open import Operations.Cast
-open import Operations.ShiftL
+open import Operator.Decidable
+open import Operator.Abs
+open import Operator.Cast
+open import Operator.ShiftL
+open import Operator.Shift
 open import RealTheory.Completion
 open import RealTheory.Interval
 
 -- First, the compress function.
 -- This creates a real number equal to the original one,
 -- but with simpler a's returned by the embedded function.
-compress : ∀ {a : Set} {{ara : AppRationals a}}
+compress : ∀ {a : Set} {{ara : AppRational a}}
                      -> C a -> C a
 compress = proj₁' (bindC (prefixCon (λ x -> MkC (λ ε -> appApprox x (ratLog2Floor (proj₁ ε) {proj₂ ε})) λ ε₁ ε₂ -> cheat) (WrapMod id cheat)))
     --     ^ actually, any modulus would be OK here (even λ _ -> null, but that's not allowed)
 {-# COMPILE AGDA2HS compress #-}
 
-@0 compressEq : ∀ {a : Set} {{ara : AppRationals a}}
+@0 compressEq : ∀ {a : Set} {{ara : AppRational a}}
                      (x : C a) -> compress x ≃ x
 compressEq = cheat
 
-@0 NonNegR : ∀ {a : Set} {{ara : AppRationals a}}
+@0 NonNegR : ∀ {a : Set} {{ara : AppRational a}}
                      -> C a -> Set
 NonNegR {a} x = ∀ (ε : PosRational) -> negate (proj₁ ε) ≤ cast {a} {Rational} (fun x ε)
 
@@ -66,7 +70,7 @@ negateR x = MkC (negate ∘ fun x) cheat
 {-# COMPILE AGDA2HS negateR #-}
 
 -- This too.
-plusR : ∀ {a : Set} {{ara : AppRationals a}}
+plusR : ∀ {a : Set} {{ara : AppRational a}}
                      -> C a -> C a -> C a
 plusR x y = map2 (prefixCon
                     (λ x -> prefixCon
@@ -80,14 +84,14 @@ plusR x y = map2 (prefixCon
 {-# COMPILE AGDA2HS plusR #-}
 
 instance
-  leReals : ∀ {a : Set} {{ara : AppRationals a}}
+  leReals : ∀ {a : Set} {{ara : AppRational a}}
                      -> Le (C a)
   Le._≤_ leReals x y = NonNegR (plusR y (negateR x))
   {-# COMPILE AGDA2HS leReals #-}
 
 -- This will be the decidable criterium for a natural
 -- to be a good witness for PosR.
-posRCrit : ∀ {a : Set} {{ara : AppRationals a}}
+posRCrit : ∀ {a : Set} {{ara : AppRational a}}
                      -> C a -> Nat -> Bool
 -- 1 << (-n)  <  x(1 << (-n-1))
 posRCrit x n = ε <# cast (fun x (halvePos εpos))
@@ -100,7 +104,7 @@ posRCrit x n = ε <# cast (fun x (halvePos εpos))
   εpos = ε :&: cheat
 {-# COMPILE AGDA2HS posRCrit #-}
 
-@0 PosR : ∀ {a : Set} {{ara : AppRationals a}}
+@0 PosR : ∀ {a : Set} {{ara : AppRational a}}
                      -> C a -> Set
 -- See Krebbers and Spitters' Prop-based _<_.
 -- This is erased; so we cannot extract n from it.
@@ -112,23 +116,23 @@ PosR x = Σ0 Nat
 
 -- We'll use these later;
 -- that's why we define them so early.
-maxR : ∀ {a : Set} {{ara : AppRationals a}}
+maxR : ∀ {a : Set} {{ara : AppRational a}}
                      -> C a -> C a -> C a
 maxR {a} x y = map2 (second :^: WrapMod id cheat) (compress x) (compress y)
   where
   -- We need to add constraints again for Haskell
   -- (otherwise, it believes it's a different a without constraints).
-  second : ∀ {a : Set} {{ara : AppRationals a}}
+  second : ∀ {a : Set} {{ara : AppRational a}}
       -> a -> UcFun a a
   second x = (λ y -> max x y) :^: WrapMod id cheat
 {-# COMPILE AGDA2HS maxR #-}
 
-minR : ∀ {a : Set} {{ara : AppRationals a}}
+minR : ∀ {a : Set} {{ara : AppRational a}}
                      -> C a -> C a -> C a
 minR {a} x y = map2 (second :^: WrapMod id cheat) (compress x) (compress y)
   where
   -- Same here.
-  second : ∀ {a : Set} {{ara : AppRationals a}}
+  second : ∀ {a : Set} {{ara : AppRational a}}
       -> a -> UcFun a a
   second x = (λ y -> min x y) :^: WrapMod id cheat
 {-# COMPILE AGDA2HS minR #-}
@@ -152,12 +156,12 @@ private
 
 instance
   -- We'll use this in NonZero.
-  ltReals : ∀ {a : Set} {{ara : AppRationals a}}
+  ltReals : ∀ {a : Set} {{ara : AppRational a}}
                      -> Lt (C a)
   Lt._<_ ltReals x y = PosR (plusR y (negateR x)) 
   {-# COMPILE AGDA2HS ltReals #-}
 
-  strongSetoidReals : ∀ {a : Set} {{ara : AppRationals a}}
+  strongSetoidReals : ∀ {a : Set} {{ara : AppRational a}}
                        -> StrongSetoid (C a)
   StrongSetoid.super strongSetoidReals = setoidC
   StrongSetoid._><_ strongSetoidReals x y = Either (x < y) (y < x)
@@ -167,7 +171,7 @@ instance
   StrongSetoid.><-tight-apart strongSetoidReals = cheat
   {-# COMPILE AGDA2HS strongSetoidReals #-}
 
-  semiRingReals : ∀ {a : Set} {{ara : AppRationals a}}
+  semiRingReals : ∀ {a : Set} {{ara : AppRational a}}
                      -> SemiRing (C a)
   SemiRing.super semiRingReals = setoidC
   -- TODO: we should rewrite this with map2.
@@ -183,7 +187,7 @@ instance
      (MkC (λ ε -> fun cy ε :&: cheat) cheat)
     where
     c : a
-    c = abs (fun (compress y) (one :&: itsTrue)) + one
+    c = abs (fun (compress y) (one :&: cheat)) + one
     @0 I : Interval a
     I = [ negate c , c ]
     secondFun : (x : a) -> UcFun (Σ0 a (IsIn I)) a
@@ -210,7 +214,7 @@ instance
   SemiRing.*-distribʳ-+ semiRingReals = cheat
   {-# COMPILE AGDA2HS semiRingReals #-}
 
-  ringReals : ∀ {a : Set} {{ara : AppRationals a}}
+  ringReals : ∀ {a : Set} {{ara : AppRational a}}
                      -> Ring (C a)
   Ring.super ringReals = semiRingReals
   Ring.negate ringReals = negateR
@@ -218,7 +222,7 @@ instance
   Ring.+-inverseʳ ringReals = cheat
   {-# COMPILE AGDA2HS ringReals #-}
 
-  absReals : ∀ {a : Set} {{ara : AppRationals a}} {{metric : PrelengthSpace a}}
+  absReals : ∀ {a : Set} {{ara : AppRational a}} {{metric : PrelengthSpace a}}
                      -> Abs (C a)
   Abs.ring absReals = ringReals
   Abs.le absReals = leReals
@@ -226,24 +230,24 @@ instance
   Abs.absCorrect absReals = cheat
   {-# COMPILE AGDA2HS absReals #-}
 
-  castCRat : ∀ {a : Set} {{ara : AppRationals a}}
+  castCRat : ∀ {a : Set} {{ara : AppRational a}}
                  -> Cast (C a) (C Rational)
   Cast.cast castCRat x = MkC (λ ε -> cast (fun x ε)) cheat
   {-# COMPILE AGDA2HS castCRat #-}
 
 -- A positivity predicate where the witness is not erased.
-PosRT : ∀ {@0 a : Set} {{@0 ara : AppRationals a}} {{@0 pra : PrelengthSpace a}}
+PosRT : ∀ {@0 a : Set} {{@0 ara : AppRational a}} {{@0 pra : PrelengthSpace a}}
                       -> @0 C a -> Set
 PosRT x = Σ0 PosRational λ ε -> proj₁ ε < cast (fun x ε)
 {-# COMPILE AGDA2HS PosRT #-}
 
-NonZeroRT : ∀ {@0 a : Set} {{@0 ara : AppRationals a}}
+NonZeroRT : ∀ {@0 a : Set} {{@0 ara : AppRational a}}
                       -> @0 C a -> Set
 NonZeroRT x = Either (PosRT x) (PosRT (negate x))
 {-# COMPILE AGDA2HS NonZeroRT #-}
 
 -- A _<_ based on that.
-LtT : ∀ {@0 a : Set} {{@0 ara : AppRationals a}}
+LtT : ∀ {@0 a : Set} {{@0 ara : AppRational a}}
                       -> @0 C a -> @0 C a -> Set
 LtT x y = PosRT (y + negate x)
 {-# COMPILE AGDA2HS LtT #-}
@@ -277,7 +281,7 @@ witness :: (Natural -> Bool) -> Σ0 Natural
 witness p = (:&:) (Prelude.until p (1 +) 1)
 #-}
 
-witnessForPos : ∀ {a : Set} {{ara : AppRationals a}}
+witnessForPos : ∀ {a : Set} {{ara : AppRational a}}
                      -> (x : C a) -> @0 (PosR x) -> PosRT x
 witnessForPos x hyp = ε :&: cheat
   where
@@ -290,7 +294,7 @@ witnessForPos x hyp = ε :&: cheat
            :&: cheat
 {-# COMPILE AGDA2HS witnessForPos #-}
 
-witnessForNonZero : ∀ {a : Set} {{ara : AppRationals a}}
+witnessForNonZero : ∀ {a : Set} {{ara : AppRational a}}
                      -> (x : C a) -> @0 (NonZero x) -> NonZeroRT x
 witnessForNonZero x hyp = sol
   where
@@ -308,7 +312,7 @@ witnessForNonZero x hyp = sol
 -- Here, strange things happen; I think that might be a bug in agda2hs.
 {-# FOREIGN AGDA2HS
 witnessForNonZero ::
-                    (AppRationals a, PrelengthSpace a) => C a -> NonZeroRT
+                    (AppRational a, PrelengthSpace a) => C a -> NonZeroRT
 witnessForNonZero x = sol
   where
     εPack :: PosRT
@@ -321,7 +325,7 @@ witnessForNonZero x = sol
 #-}
 
 instance
-  fieldReals : ∀ {a : Set} {{ara : AppRationals a}}
+  fieldReals : ∀ {a : Set} {{ara : AppRational a}}
                      -> Field (C a)
   Field.ring fieldReals = ringReals
   Field.strongSetoid fieldReals = strongSetoidReals
@@ -352,7 +356,7 @@ instance
                    MkC (λ ε -> appDiv one x cheat (ratLog2Floor (proj₁ ε) {proj₂ ε})) cheat)
                (WrapMod (λ ε -> proj₁ ε * proj₁ t * proj₁ t :&: cheat) cheat) -- are you sure?
                                                                      -- O'Connor writes this,
-                                                                     -- but maybe AppRationals kick in
+                                                                     -- but maybe AppRational kick in
   Field.recip-proper fieldReals = cheat
   Field.*-inverseˡ fieldReals = cheat
   Field.*-inverseʳ fieldReals = cheat
@@ -361,7 +365,7 @@ instance
 -- For shifting.
 -- We can use O'Connor's Theorem 29 here about multiplying with a constant.
 private
-  realShift : ∀ {a : Set} {{ara : AppRationals a}} -> C a -> Int -> C a
+  realShift : ∀ {a : Set} {{ara : AppRational a}} -> C a -> Int -> C a
   realShift x n = mapC
                     (prefixCon
                        (λ a -> shift a n)
@@ -371,7 +375,7 @@ private
   {-# COMPILE AGDA2HS realShift #-}
 
 instance
-  shiftLReals : ∀ {a : Set} {{ara : AppRationals a}}
+  shiftLReals : ∀ {a : Set} {{ara : AppRational a}}
                      -> ShiftL (C a)
   ShiftL.semiringa shiftLReals = semiRingReals
   -- Maybe we should collect these uniformly continuous functions somewhere.
@@ -382,7 +386,7 @@ instance
   {-# COMPILE AGDA2HS shiftLReals #-}
 
   -- Similarly.
-  shiftReals : ∀ {a : Set} {{ara : AppRationals a}}
+  shiftReals : ∀ {a : Set} {{ara : AppRational a}}
                      -> Shift (C a)
   Shift.super shiftReals = shiftLReals
   Shift.shift shiftReals = realShift
@@ -394,7 +398,7 @@ instance
 -- And actually, if we are here,
 -- let's write a multiplication function
 -- with a constant AQ.
-multByAQ : ∀ {a : Set} {{ara : AppRationals a}}
+multByAQ : ∀ {a : Set} {{ara : AppRational a}}
                  -> a -> C a -> C a
 multByAQ a = mapC ((λ b -> a * b) :^: WrapMod
                                         (λ ε -> multPos ε
@@ -402,7 +406,7 @@ multByAQ a = mapC ((λ b -> a * b) :^: WrapMod
                                         cheat)
 {-# COMPILE AGDA2HS multByAQ #-}
 
-@0 multByAQCorrect : ∀ {a : Set} {{ara : AppRationals a}}
+@0 multByAQCorrect : ∀ {a : Set} {{ara : AppRational a}}
                          -> (q : a) (x : C a)
                          -> multByAQ q x ≃ returnC q * x
 multByAQCorrect = cheat
@@ -411,12 +415,12 @@ multByAQCorrect = cheat
 -- Sometimes, it's more beneficial for it to be even negative;
 -- e.g. when we need an interval like ]-∞, canonicalBound x ].
 -- But you can use canonicalBound (abs x) if you need that.
-canonicalBound : ∀ {a : Set} {{ara : AppRationals a}}
+canonicalBound : ∀ {a : Set} {{ara : AppRational a}}
                      (x : C a) -> a
-canonicalBound x = fun (compress x) (one :&: itsTrue) + one
+canonicalBound x = fun (compress x) (one :&: cheat) + one
 {-# COMPILE AGDA2HS canonicalBound #-}
 
-@0 canonicalBoundCorrect : ∀ {a : Set} {{ara : AppRationals a}}
+@0 canonicalBoundCorrect : ∀ {a : Set} {{ara : AppRational a}}
                            -> ∀ (x : C a)
                            -> x ≤ returnC (canonicalBound x)
 canonicalBoundCorrect = cheat

@@ -6,6 +6,7 @@ module Algebra.Field where
 open import Haskell.Prim using (⊥)
 
 open import Algebra.Setoid
+open import Algebra.SemiRing
 open import Algebra.Ring
 
 record Field (a : Set) : Set₁ where

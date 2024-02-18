@@ -7,9 +7,10 @@ open import Haskell.Prim.Either
 open import Haskell.Prim using (⊥)
 open import Haskell.Prim.Tuple
 
-open import Tools.ErasureProduct
-open import Tools.Relations
+open import Tool.ErasureProduct
+open import Tool.Relations
 open import Algebra.Setoid
+open import Algebra.SemiRing
 open import Algebra.Ring
 
 -- A set of which we only know it has a _<_ operator.
