@@ -7,6 +7,7 @@ module Function.SquareRoot where
 open import Tool.Cheat
 
 open import Agda.Builtin.Equality
+open import Agda.Builtin.Unit
 open import Agda.Builtin.Nat using (Nat; zero; suc)
 open import Agda.Builtin.Int using (Int; pos; negsuc)
 open import Haskell.Prim.Bool
@@ -15,17 +16,20 @@ open import Haskell.Prim using (if_then_else_)
 
 open import Algebra.Setoid
 open import Algebra.Order
+open import Algebra.SemiRing
 open import Algebra.Ring
 open import Function.Exp using (exp)
 open import Implementation.Nat using (natLog2Floor)
 open import Implementation.Int using (natAbs; intRem)
+open import Implementation.Frac
 open import Implementation.Rational
 open import Operator.Decidable
 open import Operator.ShiftL
+open import Operator.Shift
 open import RealTheory.AppRational
 open import RealTheory.Completion
 open import RealTheory.Interval
-open import RealTheory.Reals using (compress)
+open import RealTheory.Real using (compress)
 open import RealTheory.Continuity
 open import Tool.ErasureProduct
 
@@ -35,7 +39,7 @@ import Prelude (snd, (&&), Integer)
 
 import Implementation.Nat (suc)
 import Implementation.Int (pos, negsuc)
-import RealTheory.Reals
+import RealTheory.Real
 #-}
 
 -- We'll need this later.
@@ -125,7 +129,7 @@ sqrtQ (x :&: _) = if x ≃# null then returnC null
   where
   logx twom m : Int
   logx = log2Floor x cheat
-  twom = if intRem logx (pos 2) ≃# pos 0    -- as I see, the even function of Haskell works like this
+  twom = if intRem logx (pos 2) tt ≃# pos 0    -- as I see, the even function of Haskell works like this
          then negate logx
          else pos 1 + negate logx
   m = shift twom (negsuc 0)

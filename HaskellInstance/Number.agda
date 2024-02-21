@@ -11,7 +11,7 @@ open import Algebra.Ring
 open import Operator.Cast
 open import RealTheory.AppRational
 open import RealTheory.Completion
-import RealTheory.Reals
+import RealTheory.Real
 
 instance
   numberReal : {a : Set} {{ara : AppRational a}} -> Number (C a)

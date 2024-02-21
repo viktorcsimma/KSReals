@@ -6,7 +6,7 @@ module Tool.PropositionalEquality where
 
 open import Agda.Builtin.Equality
 
-open import Tool.Relations
+open import Tool.Relation
 
 @0 cong : ∀ {i} {a b : Set i} (f : a -> b) {x y : a} → x ≡ y → f x ≡ f y
 cong f refl = refl 

@@ -13,7 +13,7 @@ import Prelude (Integer, const, snd)
 
 import Implementation.Nat
 import Implementation.Int
-import RealTheory.Instances.Pow
+import RealTheory.Instance.Pow
 #-}
 
 open import Tool.Cheat
@@ -29,7 +29,7 @@ open import Tool.Stream
 open import Algebra.SemiRing
 open import Algebra.Ring
 open import Algebra.Field
-open import Algebra.MetricSpace
+open import RealTheory.MetricSpace
 open import Implementation.Nat
 open import Implementation.Int
 open import Implementation.Frac
@@ -44,8 +44,8 @@ open import Operator.Shift
 open import RealTheory.AppRational
 open import RealTheory.Completion
 open import RealTheory.Continuity
-open import RealTheory.Reals
-open import RealTheory.Instances.Pow
+open import RealTheory.Real
+open import RealTheory.Instance.Pow
 open import RealTheory.Interval
 
 open import Haskell.Prim using (if_then_else_; const; itsTrue; id)

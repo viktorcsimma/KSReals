@@ -2,7 +2,7 @@
 -- (AppRational types in the C monad).
 {-# OPTIONS --erasure #-}
 
-module RealTheory.Reals where
+module RealTheory.Real where
 
 {-# FOREIGN AGDA2HS
 import qualified Prelude
@@ -32,7 +32,7 @@ open import Implementation.Int
 open import Implementation.Frac
 open import Implementation.Rational
 open import RealTheory.AppRational
-open import Algebra.MetricSpace
+open import RealTheory.MetricSpace
 open import RealTheory.Continuity
 open import Algebra.SemiRing
 open import Algebra.Ring
@@ -43,6 +43,7 @@ open import Operator.Abs
 open import Operator.Cast
 open import Operator.ShiftL
 open import Operator.Shift
+open import Operator.ExactShift
 open import RealTheory.Completion
 open import RealTheory.Interval
 
@@ -64,7 +65,7 @@ compressEq = cheat
 NonNegR {a} x = ∀ (ε : PosRational) -> negate (proj₁ ε) ≤ cast {a} {Rational} (fun x ε)
 
 -- We need this to avoid circular dependencies.
-negateR : ∀ {a : Set} {{ring : Ring a}} {{pra : PrelengthSpace a}}
+negateR : ∀ {a : Set} {{ring : Ring a}} {{metricSpace : MetricSpace a}}
                      -> C a -> C a
 negateR x = MkC (negate ∘ fun x) cheat
 {-# COMPILE AGDA2HS negateR #-}
@@ -222,7 +223,7 @@ instance
   Ring.+-inverseʳ ringReals = cheat
   {-# COMPILE AGDA2HS ringReals #-}
 
-  absReals : ∀ {a : Set} {{ara : AppRational a}} {{metric : PrelengthSpace a}}
+  absReals : ∀ {a : Set} {{ara : AppRational a}}
                      -> Abs (C a)
   Abs.ring absReals = ringReals
   Abs.le absReals = leReals
@@ -236,7 +237,7 @@ instance
   {-# COMPILE AGDA2HS castCRat #-}
 
 -- A positivity predicate where the witness is not erased.
-PosRT : ∀ {@0 a : Set} {{@0 ara : AppRational a}} {{@0 pra : PrelengthSpace a}}
+PosRT : ∀ {@0 a : Set} {{@0 ara : AppRational a}}
                       -> @0 C a -> Set
 PosRT x = Σ0 PosRational λ ε -> proj₁ ε < cast (fun x ε)
 {-# COMPILE AGDA2HS PosRT #-}
@@ -312,7 +313,7 @@ witnessForNonZero x hyp = sol
 -- Here, strange things happen; I think that might be a bug in agda2hs.
 {-# FOREIGN AGDA2HS
 witnessForNonZero ::
-                    (AppRational a, PrelengthSpace a) => C a -> NonZeroRT
+                    (AppRational a) => C a -> NonZeroRT
 witnessForNonZero x = sol
   where
     εPack :: PosRT
@@ -394,6 +395,12 @@ instance
   Shift.shiftEquivalent shiftReals = cheat
   Shift.shiftLeftThenRight shiftReals = cheat
   {-# COMPILE AGDA2HS shiftReals #-}
+
+  exactShiftReals : ∀ {a : Set} {{ara : AppRational a}}
+                     -> ExactShift (C a)
+  ExactShift.super exactShiftReals = shiftReals
+  ExactShift.shiftRightThenLeft exactShiftReals = cheat
+  {-# COMPILE AGDA2HS exactShiftReals #-}
 
 -- And actually, if we are here,
 -- let's write a multiplication function

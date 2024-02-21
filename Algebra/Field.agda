@@ -25,17 +25,3 @@ record Field (a : Set) : Set₁ where
 open Field {{...}} public
 {-# COMPILE AGDA2HS Field class #-}
 
-{-
--- DecField is a field in which the reciprocal function is total.
-record DecField (a : Set) : Set₁ where
-  field
-    overlap {{ring}} : Ring a
-    decRecip : a -> a
-    @0 decRecipProper : SetoidMorphism decRecip
-    @0 decRecipInverse : ∀ (x : a) -> (x ≃ null -> ⊥) -> x * decRecip x ≃ one
-    -- We let /0 = 0 so properties as Injective (/), f (/x) = / (f x), / /x = x, /x * /y = /(x * y) 
-    -- hold without any additional assumptions.
-    @0 decRecipNull : decRecip null ≃ null
-open DecField {{...}} public
-{-# COMPILE AGDA2HS DecField #-}
--}

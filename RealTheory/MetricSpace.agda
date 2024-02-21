@@ -1,7 +1,7 @@
 -- Definition of metric and prelength spaces.
 {-# OPTIONS --erasure #-}
 
-module Algebra.MetricSpace where
+module RealTheory.MetricSpace where
 
 {-# FOREIGN AGDA2HS
 import qualified Prelude
@@ -40,10 +40,10 @@ record MetricSpace (a : Set) : Set₁ where
                             -> ball ε₁ x y -> ball ε₂ y z
                             -> ball (plusPos ε₁ ε₂) x y
     @0 ballClosed : ∀ (ε : PosRational) -> ∀ x y
-                       -> (∀ (δ : PosRational) -> ball (plusPos ε δ) x y)
-                       -> ball ε x y
+                            -> (∀ (δ : PosRational) -> ball (plusPos ε δ) x y)
+                            -> ball ε x y
     @0 ballEq : ∀ x y -> (∀ (ε : PosRational) -> ball ε x y)
-                      -> x ≃ y
+                            -> x ≃ y
 open MetricSpace {{...}} public
 {-# COMPILE AGDA2HS MetricSpace class #-}
 

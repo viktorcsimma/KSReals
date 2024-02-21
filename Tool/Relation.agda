@@ -2,7 +2,7 @@
 -- and propositions.
 {-# OPTIONS --erasure #-}
 
-module Tool.Relations where
+module Tool.Relation where
 
 open import Agda.Primitive
 open import Haskell.Prim.Tuple

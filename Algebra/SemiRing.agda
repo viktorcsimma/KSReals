@@ -13,7 +13,7 @@ open import Agda.Builtin.Nat using (zero; suc)
 open import Agda.Builtin.Int using (pos; negsuc)
 open import Haskell.Prim using (⊥)
 
-open import Tool.Relations
+open import Tool.Relation
 open import Algebra.Setoid
 
 -- The trick is that

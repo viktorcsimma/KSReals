@@ -134,7 +134,7 @@ instance
   {-# COMPILE AGDA2HS ringFrac #-}
 
   -- It's enough that a is a ring and a strong setoid; it need not be a field.
-  fieldFrac : ∀ {a : Set} {{ring : Ring a}} {{trivApart : TrivialApart a}}
+  fieldFrac : ∀ {a : Set} {{ring : Ring a}} {{strongSetoid : StrongSetoid a}}
                                               -> Field (Frac a)
   Field.ring fieldFrac = ringFrac
   Field.strongSetoid fieldFrac = strongSetoidFrac
@@ -198,13 +198,6 @@ instance
   PseudoOrder.<-cotrans pseudoOrderFrac x<y z = cheat
   PseudoOrder.<-total pseudoOrderFrac = cheat
   {-# COMPILE AGDA2HS pseudoOrderFrac #-}
-
-  trivialApartFrac : ∀ {a : Set} {{semiRing : SemiRing a}} {{trivialApart : TrivialApart a}}
-                                      -> TrivialApart (Frac a)
-  TrivialApart.super trivialApartFrac = strongSetoidFrac
-  TrivialApart.trivialApart trivialApartFrac x y = cheat
-                      {-{!trivialApart (num x * den y) (num y * den x)!}-}
-  {-# COMPILE AGDA2HS trivialApartFrac #-}
 
   -- Abs already implies Ring and Le..
   absFrac : ∀ {a : Set} {{absa : Abs a}} -> Abs (Frac a)

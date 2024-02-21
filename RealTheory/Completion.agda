@@ -22,7 +22,7 @@ open import Haskell.Prim using (_∘_; const; id)
 open import Tool.Cheat
 
 open import Tool.ErasureProduct
-open import Algebra.MetricSpace
+open import RealTheory.MetricSpace
 open import Algebra.Setoid
 open import Algebra.SemiRing
 open import Algebra.Ring

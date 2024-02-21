@@ -8,7 +8,7 @@ open import Haskell.Prim using (⊥)
 open import Haskell.Prim.Tuple
 
 open import Tool.ErasureProduct
-open import Tool.Relations
+open import Tool.Relation
 open import Algebra.Setoid
 open import Algebra.SemiRing
 open import Algebra.Ring
@@ -79,13 +79,6 @@ record PseudoOrder (a : Set) : Set₁ where
   x > y = y < x
 open PseudoOrder {{...}} public
 {-# COMPILE AGDA2HS PseudoOrder class #-}
-
-record TrivialApart (a : Set) : Set₁ where
-  field
-    overlap {{super}} : StrongSetoid a
-    @0 trivialApart : ∀ (x y : a) -> x >< y ↔ (x ≃ y -> ⊥)
-open TrivialApart {{...}} public
-{-# COMPILE AGDA2HS TrivialApart class #-}
 
 @0 StrictlyOrderPreserving : {a b : Set} -> {{PseudoOrder a}} -> {{PseudoOrder b}}
                                  -> (a -> b) -> Set

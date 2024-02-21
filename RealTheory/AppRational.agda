@@ -16,7 +16,7 @@ import Numeric.Natural
 
 import Algebra.SemiRing
 import Algebra.Ring
-import Algebra.MetricSpace
+import RealTheory.MetricSpace
 import Implementation.Int
 
 #-}
@@ -48,7 +48,7 @@ open import Implementation.Nat
 open import Implementation.Int
 open import Implementation.Dyadic
 open import Implementation.Decimal
-open import Algebra.MetricSpace
+open import RealTheory.MetricSpace
 open import Operator.Cast
 
 record AppRational (aq : Set) : Set₁ where
@@ -60,7 +60,6 @@ record AppRational (aq : Set) : Set₁ where
     overlap {{decLe}} : DecLe aq
     overlap {{decLt}} : DecLt aq
     overlap {{strongSetoid}} : StrongSetoid aq
-    overlap {{trivialApart}} : TrivialApart aq
     overlap {{absAq}} : Abs aq -- we need this for alternating series
     overlap {{exactShift}} : ExactShift aq
     overlap {{natPow}} : Pow aq Nat
@@ -106,7 +105,8 @@ record AppRational (aq : Set) : Set₁ where
                                           × x < shift one (pos 1 + (log2Floor x 0<x))
 
     -- finally, to be able to print them in decimal form
-    -- (with a given precision):
+    -- (with a given precision of digits
+    --      after the decimal point):
     toDecimal : (x : aq) (prec : Nat) -> Decimal
     @0 toDecimalCorrect : ∀ x prec ->
                             (cast {aq} {Rational} x) - (cast {Decimal} {Rational} (toDecimal x prec))
@@ -128,7 +128,6 @@ instance
   AppRational.pseudoOrder appRationalRational = pseudoOrderFrac
   AppRational.decSetoid appRationalRational = decSetoidFrac
   AppRational.strongSetoid appRationalRational = strongSetoidFrac
-  AppRational.trivialApart appRationalRational = trivialApartFrac
   AppRational.absAq appRationalRational = absFrac
   AppRational.exactShift appRationalRational = exactShiftFrac {{intShiftL}}
   AppRational.natPow appRationalRational = natPowFrac
@@ -155,7 +154,6 @@ instance
   AppRational.pseudoOrder appRationalDyadic = pseudoOrderDyadic
   AppRational.decSetoid appRationalDyadic = decSetoidDyadic
   AppRational.strongSetoid appRationalDyadic = strongSetoidDyadic
-  AppRational.trivialApart appRationalDyadic = trivialApartDyadic
   AppRational.absAq appRationalDyadic = absDyadic
   AppRational.exactShift appRationalDyadic = exactShiftDyadic
   AppRational.natPow appRationalDyadic = natPowDyadic

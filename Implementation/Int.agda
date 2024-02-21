@@ -186,11 +186,6 @@ instance
   StrongSetoid.><-tight-apart strongSetoidInt = cheat , λ eq neq -> neq eq
   {-# COMPILE AGDA2HS strongSetoidInt #-}
 
-  trivialApartInt : TrivialApart Int
-  TrivialApart.super trivialApartInt = strongSetoidInt
-  TrivialApart.trivialApart trivialApartInt x y = id , id
-  {-# COMPILE AGDA2HS trivialApartInt #-}
-
   semiRingInt : SemiRing Int
   SemiRing.super semiRingInt = setoidInt
   SemiRing._+_ semiRingInt = intPlus

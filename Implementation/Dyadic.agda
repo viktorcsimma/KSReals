@@ -18,7 +18,7 @@ import Implementation.Frac
 import Implementation.Rational
 import Algebra.SemiRing
 import Algebra.Ring
-import Algebra.MetricSpace
+import RealTheory.MetricSpace
 #-}
 
 open import Agda.Builtin.Unit
@@ -46,7 +46,7 @@ open import Operator.ExactShift
 open import Operator.Pow
 open import Operator.Decidable
 open import Algebra.Order
-open import Algebra.MetricSpace
+open import RealTheory.MetricSpace
 open import Tool.ErasureProduct
 
 -- For the sake of simplicity, we now use the concrete Int type.
@@ -114,11 +114,6 @@ instance
   StrongSetoid.><-cotrans strongSetoidDyadic {x = x} {y = y} neq z = ><-cotrans {x = dToQSlow x} {y = dToQSlow y} neq (dToQSlow z)
   StrongSetoid.><-tight-apart strongSetoidDyadic {x = x} {y = y} = ><-tight-apart {x = dToQSlow x} {y = dToQSlow y}
   {-# COMPILE AGDA2HS strongSetoidDyadic #-}
-
-  trivialApartDyadic : TrivialApart Dyadic
-  TrivialApart.super trivialApartDyadic = strongSetoidDyadic
-  TrivialApart.trivialApart trivialApartDyadic x y = id , id
-  {-# COMPILE AGDA2HS trivialApartDyadic #-}
 
   -- But this is the efficient one.
   decSetoidDyadic : DecSetoid Dyadic

@@ -6,7 +6,7 @@ module RealTheory.Continuity where
 open import Agda.Builtin.Unit
 
 open import Algebra.Order
-open import Algebra.MetricSpace
+open import RealTheory.MetricSpace
 open import Implementation.Rational
 open import Tool.ErasureProduct
 

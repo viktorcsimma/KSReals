@@ -10,7 +10,7 @@ open import Haskell.Prim.Either
 open import Haskell.Prim using (IsTrue; if_then_else_)
 
 open import Algebra.Setoid
-open import Tool.Relations
+open import Tool.Relation
 open import Algebra.Order
 
 -- In order to make it compilable, we always define operators

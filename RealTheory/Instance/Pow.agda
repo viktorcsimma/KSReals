@@ -2,7 +2,7 @@
 -- based on O'Connor's intPowerCts.
 {-# OPTIONS --erasure #-}
 
-module RealTheory.Instances.Pow where
+module RealTheory.Instance.Pow where
 
 open import Tool.Cheat
 
@@ -11,7 +11,7 @@ open import Agda.Builtin.Int using (Int; pos; negsuc)
 open import Haskell.Prim using (id; itsTrue)
 
 open import Algebra.Field
-open import Algebra.MetricSpace
+open import RealTheory.MetricSpace
 open import Algebra.Order
 open import Algebra.SemiRing
 open import Algebra.Ring
@@ -27,7 +27,7 @@ open import RealTheory.AppRational
 open import RealTheory.Completion
 open import RealTheory.Continuity
 open import RealTheory.Interval
-open import RealTheory.Reals
+open import RealTheory.Real
 open import Tool.ErasureProduct
 
 {-# FOREIGN AGDA2HS

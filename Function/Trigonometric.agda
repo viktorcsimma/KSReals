@@ -15,26 +15,29 @@ open import Agda.Builtin.Int using (Int; pos; negsuc)
 open import Agda.Builtin.Unit
 open import Haskell.Prim.Bool
 open import Haskell.Prim.Tuple
-open import Haskell.Prim using (id; if_then_else_; itsTrue)
+open import Haskell.Prim using (id; if_then_else_; itsTrue; the)
 
 open import Algebra.Field using (recip)
-import Algebra.MetricSpace
+import RealTheory.MetricSpace
+open import Algebra.SemiRing
 open import Algebra.Ring
 open import Function.AlternatingSeries
 open import Implementation.Nat
 import Implementation.Int
+open import Implementation.Frac
 open import Implementation.Rational
 open import Operator.Abs
 open import Operator.Cast
 open import Operator.Decidable
 open import Operator.Pow
 open import Operator.ShiftL
+open import Operator.Shift
 open import RealTheory.AppRational
 open import RealTheory.Completion
 open import RealTheory.Continuity
-import RealTheory.Instances.Pow
+import RealTheory.Instance.Pow
 open import RealTheory.Interval
-open import RealTheory.Reals
+open import RealTheory.Real
 open import Tool.ErasureProduct
 open import Tool.Stream
 
@@ -43,8 +46,8 @@ import qualified Prelude
 import Prelude (id, snd, (&&))
 import Implementation.Nat
 import Implementation.Int
-import RealTheory.Instances.Pow
-import RealTheory.Reals
+import RealTheory.Instance.Pow
+import RealTheory.Real
 #-}
 
 -- TODO: this does not terminate for x=1 and x=-1
@@ -124,8 +127,8 @@ sinFracQ x =    -- K&S recommend 2^(-75) as an upper bound for high-precision ca
   where
   raise : ∀ {a : Set} {{ara : AppRational a}} -> C a -> C a
   raise s = mapC (prefixCon
-                    (λ s -> s * (cast 3 - shiftl (s ^ fromInteger 2) 2))
-                    (WrapMod (λ ε -> multPos ε (MkFrac (pos 1) (pos 9) tt :&: itsTrue))
+                    (λ s -> s * (cast 3 - shiftl (s ^ the Nat 2) 2))
+                    (WrapMod (λ ε -> multPos ε (MkFrac (pos 1) (pos 9) tt :&: cheat))
                                                          -- sin(x/3) ∈ [-1,1];
                                                          -- so the derivative is at most 9
                                                          -- see Krebbers' DReal.hs
@@ -147,6 +150,6 @@ sinQUc = prefixCon sinQ (WrapMod id cheat)
 
 -- And finally:
 sin : ∀ {a : Set} {{ara : AppRational a}}
-         -> (x : C a) -> C a
+         -> C a -> C a
 sin x = proj₁' (bindC sinQUc) (compress x)
 {-# COMPILE AGDA2HS sin #-}
