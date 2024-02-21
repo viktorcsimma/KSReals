@@ -1,0 +1,571 @@
+@startuml structure
+allowmixing
+
+package Algebra {
+    package Setoid {
+        interface Setoid {
+            --
+            <<reflexive, symmetric, transitive>>
+            _≃_ : a -> a -> Set
+        }
+
+        interface StrongSetoid {
+            --
+            <<irreflexive, symmetric, cotransitive,
+            equivalent with "not _≃_">>
+            _><_ : a -> a -> Set
+        }
+
+        StrongSetoid --|> Setoid
+    }
+
+    package SemiRing {
+        interface SemiRing {
+            --
+            <<Abelian operator>>
+            _+_ : a -> a -> a
+            <<monoid operator,
+              distributive with respect to addition>>
+            _*_ : a -> a -> a
+            null : a
+            one : a
+            NonZero : a -> Set
+            NonZeroOne : NonZero one
+        }
+
+        SemiRing --|> Setoid
+    }
+
+    package Ring {
+        interface Ring {
+            --
+            <<additive inverse>>
+            negate : a -> a
+        }
+
+        Ring --|> SemiRing
+    }
+
+    package Field {
+        interface Field {
+            recip : (x : a) -> NonZero x -> a
+            <<f x y >< f z w -> Either (x >< z) (z >< w)>>
+            <<recip preserves equality
+              and is a multiplicative inverse>>
+        }
+
+        Field --|> Ring
+        Field --|> StrongSetoid
+    }
+}
+
+package Order {
+    interface Le {
+        --
+        _≤_ : a -> a -> Set
+    }
+
+    interface PartialOrder {
+        --
+        << _≤_ preserves equality>>
+    }
+
+    interface Lt {
+        --
+        _<_ : a -> a -> Set
+    }
+
+    interface StrictOrder {
+        --
+        <<_<_ is irreflexive, transitive,
+            and preserves equality >>
+    }
+
+    interface PseudoOrder {
+        --
+        <<_<_ is asymmetric, cotransitive,
+            and total>>
+    }
+
+    ' not yet used
+    interface PseudoRingOrder {
+        --
+        <<∀ (x y z w : a) -> x * y >< z * w -> Either (x >< z) (z >< w)>>
+        <<∀ {z x y : a} -> x < y -> z + x < z + y>>
+        <<∀ (x y : a) -> null < x -> null < y -> null < x * y>>
+    }
+    PseudoRingOrder --|> PseudoOrder
+    PseudoRingOrder --|> Ring
+
+    ' not yet used
+    interface PseudoSemiRingOrder {
+        --
+        <<∀ x y -> (y < x -> ⊥) -> Σ0 a (λ z -> y ≃ x + z)>>
+        <<∀ {z x y : a} -> x < y -> z + x < z + y>>
+        <<∀ {z x y : a} -> z + x < z + y -> x < y>>
+        <<∀ (x y z w : a) -> x * y >< z * w -> Either (x >< z) (z >< w)>>
+        <<∀ (x y : a) -> null < x -> null < y -> null < x * y>>
+    }
+
+    ' not yet used
+    interface FullPseudoSemiRingOrder {
+        <<x ≤ y ↔ (y < x -> ⊥)>>
+    }
+
+    Le --|> Setoid
+    Lt --|> Setoid
+    PseudoOrder --|> StrongSetoid
+    PartialOrder --|> Le
+    StrictOrder --|> Lt
+    PseudoOrder --|> Lt
+    PseudoSemiRingOrder --|> PseudoOrder
+    PseudoSemiRingOrder --|> SemiRing
+    FullPseudoSemiRingOrder --|> PseudoSemiRingOrder
+    FullPseudoSemiRingOrder --|> Le
+}
+
+package Operator {
+    package Abs {
+        interface Abs {
+            abs : a -> a
+            <<(null ≤ x -> abs x ≃ x)
+                × (x ≤ null -> abs x ≃ negate x)
+        }
+        Abs --|> Ring
+        Abs --|> Le
+    }
+
+    package Cast {
+        interface Cast<<two-parameter>> {
+            cast : a -> b
+        }
+    }
+
+    package Decidable {
+        interface DecSetoid {
+            _≃#_ : a -> a -> Bool
+            <<decides _≃_>>
+        }
+        DecSetoid --|> Setoid
+
+        interface DecLe {
+            _≤#_ : a -> a -> Bool
+            <<decides _≤_>>
+        }
+        DecLe --|> Le
+
+        interface DecLt {
+            _<#_ : a -> a -> Bool
+            <<decides _<_>>
+        }
+        DecLt --|> Lt
+    }
+
+    package Pow {
+        interface Pow<<two-parameter>> {
+            <<a and b are SemiRings>>
+            _^_ : a -> b -> a
+            <<preserves equality>>
+            <<x^null is one>>
+            <<x^(one+n) is x*x^n>>
+        }
+
+        ' actually, this might help
+        interface Pow_Nat {
+            _^_ : a -> Nat -> a
+        }
+        interface Pow_Int {
+            _^_ : a -> b -> a
+        }
+    }
+
+    package ShiftL {
+        interface ShiftL {
+            shiftl : a -> Nat -> a
+            <<preserves equality,
+              shifting with zero is the identity function,
+              every shift doubles>>
+        }
+        ShiftL --|> SemiRing
+    }
+
+    package Shift {
+        interface Shift {
+            shift : a -> Int -> a
+            <<preserves equality,
+              equivalent with shiftl for nonnegatives,
+              shifting left then right returns the original value>>
+        }
+        Shift --|> ShiftL
+    }
+
+    package ExactShift {
+        interface ExactShift {
+            <<shifting right then left returns the same number>>
+            <<that means there is no loss of precision>>
+        }
+        ExactShift --|> Shift
+    }
+}
+
+package Implementation {
+    package Nat {
+        class Nat<<Agda.Builtin.Nat>> {
+            zero : Nat <<constructor>>
+            suc : Nat -> Nat <<constructor>>
+        }
+        'Nat --|> SemiRing /'implied by Naturals'/
+        Nat --|> Decidable
+        Nat --|> Pow_Nat
+
+        interface Naturals {
+            <<a generalisation>>
+            <<the "smallest" semiring>>
+            naturalsToSemiRing : casts to any SemiRing
+            <<it preserves equality>>
+            <<all other functions that can do this are equivalent>>
+        }
+        Naturals --|> SemiRing
+        Nat --|> Naturals
+        Nat --|> ShiftL
+    }
+
+    package Int {
+        class Int<<Agda.Builtin.Int>> {
+            pos : Nat -> Int <<constructor>>
+            negsuc : Nat -> Int <<constructor>>
+        }
+
+        interface Integers {
+            <<a generalisation>>
+            <<the "smallest" ring>>
+            integersToRing : casts to any Ring
+            <<it preserves equality>>
+            <<all other functions that can do this are equivalent>>
+        }
+
+        Int o-- Nat
+        'Int --|> Ring /'implied by Integers'/
+        Int --|> Decidable
+        Int --|> PseudoOrder
+        Int --|> Abs
+        Int --|> Shift
+        Int --|> Pow_Nat
+        Int --|> Integers
+        Integers --|> Ring
+
+        'Int --|> Integers is not yet done
+    }
+
+    package Frac {
+        class Frac<a extends SemiRing> {
+            num : a
+            den : a
+            --
+            <<constructor>>
+            MkFrac : a -> a -> Frac a
+        }
+        ' I add the instances in Rational
+        ' because there are conditions on a
+    }
+
+    package Rational {
+        class Rational {
+            <<a is Int>>
+            <<Cast Int Rational>>
+        }
+        Rational --|> Frac
+        Rational *-- Int
+
+        class PosRational {}
+        PosRational o-- Rational
+        PosRational --|> ErasureProduct
+        MetricSpace ..> PosRational
+    }
+
+    package Dyadic {
+        class Dyadic {
+            mant : Int
+            expo : Int
+            --
+            _:|^_ : Int -> Int -> Dyadic <<constructor>>
+        }
+        Dyadic *-- Int
+    }
+
+    package Decimal {
+        class Decimal {
+            decMant : Int
+            decExpo : Int
+            --
+            MkDec : Int -> Int -> Decimal <<constructor>>
+        }
+        Decimal *-- Int
+        Decimal ..|> AppRational: not complete yet
+    }
+}
+
+package RealTheory {
+    package MetricSpace {
+        interface MetricSpace {
+            ball : PosRational -> a -> a -> Set
+            <<reflexive, symmetric>>
+            <<ball ε₁ x y -> ball ε₂ y z -> ball (ε₁ + ε₂) x y>>
+            <<(∀ (δ : PosRational) -> ball (plusPos ε δ) x y) -> ball ε x y>>
+            <<(∀ (ε : PosRational) -> ball ε x y) -> x ≃ y>>
+        }
+        MetricSpace --|> Setoid
+
+        interface PrelengthSpace {
+            << (proj₁ ε < proj₁ δ₁ + proj₁ δ₂) -> @0 (ball ε x y) -> Σ0 a (λ z -> ball δ₁ x z × ball δ₂ z y) >>
+        }
+        PrelengthSpace --|> MetricSpace
+    }
+
+    package Continuity {
+        ' actually, the modulus is in another record named UniformlyContinuous
+        ' but this is easier to understand now
+        class UcFun<<a extends MetricSpace, b extends MetricSpace>> {
+            f : a -> b
+            modulus : PosRational -> PosRational
+            --
+            <<∀ ε x y -> ball (modulus ε) x y -> ball ε (f x) (f y)>>
+        }
+        UcFun ..> PosRational
+    }
+
+    package Completion {
+        class C<a extends MetricSpace> {
+            fun : PosRational -> a
+            <<∀ (ε₁ ε₂ : PosRational)
+               -> ball (plusPos ε₁ ε₂) (fun ε₁) (fun ε₂)>>
+            --
+            returnC : a -> C a
+            join : C (C a) -> C a
+            mapC : UcFun a b -> (C a -> C b) <<if a is prelength>>
+            bindC : UcFun a (C b) -> UcFun (C a) (C b) <<if both are prelength>>
+            map2 : UcFun a (UcFun b c) -> (C a -> C b -> C c) <<if all are prelength>>
+        }
+        C --|> MetricSpace
+        C --|> PrelengthSpace: if a is prelength
+    }
+
+    package AppRational {
+        interface AppRational {
+            appDiv : (x y : a) -> @0 (NonZero y) -> Int -> a
+            appApprox : a -> Int -> a
+            log2Floor : (x : a) -> @0 (null < x) -> Int
+            toDecimal : a -> Nat -> Decimal
+            <<Cast a Rational>>
+            <<Cast Int a>>
+            --
+            <<Cast a Rational is order-embedding,
+                                  strict-order-embedding,
+                                  preserves equality,
+                                  preserves non-zero-ness>>
+            <<Cast Int a preserves semiring operators>>
+            <<appDiv is division with a given precision
+            of a 2-power>>
+            <<appApprox is approximation with a given precision
+            of a 2-power>>
+            <<log2Floor is the lowest exponent k
+            with which 2^k <= x>>
+            <<toDecimal converts to a decimal
+            with a given precision of digits
+            after the decimal point>>
+        }
+        AppRational --|> PartialOrder
+        AppRational --|> PseudoOrder
+        AppRational --|> Decidable
+        AppRational --|> StrongSetoid
+        AppRational --|> Abs
+        AppRational --|> ExactShift
+        AppRational --|> PrelengthSpace
+        AppRational --|> Pow_Nat
+        Dyadic --|> AppRational
+        Rational --|> AppRational
+    }
+
+    package Real {
+        class C_<a extends AppRational><<if the base type is an AppRational>> {
+            <<Cast (C a) (C Rational)>>
+            compress : C a -> C a <<preserves equality>>
+            NonNegR : C a -> Set <<used for Le>>
+            PosR : C a -> Set <<positivity with erased witness; used for Lt>>
+            PosRT : C a -> Set <<positivity with non-erased witness>>
+            NonZeroRT : C a -> Set <<similarly>>
+            LtT : C a -> C a -> Set <<derived from PosRT>>
+            witnessForPos : (x : C a) -> @0 (PosR x) -> PosRT x
+            witnessForNonZero : (x : C a) -> @0 (NonZero x) -> NonZeroRT x
+            multByAQ : a -> C a -> C a <<faster than normal multiplication>>
+            canonicalBound : (x : C a) -> a <<guaranteed to be >= x>>
+        }
+        C_ *-- AppRational: in a sense
+        C_ --|> C
+        C_ --|> Le
+        C_ --|> Lt
+        C_ --|> Field
+        C_ --|> Abs
+        C_ --|> ExactShift
+        C_ --|> Pow_Nat
+    }
+
+    package Instance {
+        ' an instance for Pow (C a) Nat, if a is an AppRational
+        ' TODO: actually, this is in Instance.Pow
+        class Pow_<<static>> {
+            <<an instance for Pow (C_ a) Nat>>
+        }
+    }
+}
+
+package Tool {
+    package Cheat {
+        class Cheat<<static>> {
+            {static} cheat : "anything"
+        }
+    }
+
+    package ErasureProduct {
+        class Σ0<<two-parameter; b : a to Set j>> {
+            proj₁ : a
+            @0 proj₂ : b proj₁
+            --
+            _:&:_ : a -> b a -> Σ0 a b <<constructor>>
+            prefixCon : a -> b a -> Σ0 a b <<a prefix alias; agda2hs sometimes needs it>>
+        }
+    }
+
+    package PropositionalEquality {
+        class PropositionalEquality<<static>> {
+            {static} cong sym trans subst : properties of _≡_
+        }
+    }
+
+    package Relation {
+        class Relation<<static>> {
+            _↔_ : Set -> Set -> Set
+            <<an Either for any levels>>
+            _⊎_ : Set i -> Set j -> Set (i ⊔ j)
+        }
+    }
+
+    package Show {
+        class Show<<actually in the agda2hs lib>> {
+            <<instances>>
+        }
+        Nat --|> Show
+        Int --|> Show
+        Rational --|> Show
+        Decimal --|> Show
+        Dyadic --|> Show
+    }
+
+    package Stream {
+        class Stream<<coinductive>> {
+            streamHead : a
+            streamTail : Stream a
+            --
+            mkStream : a -> Stream a -> Stream a <<constructor>>
+        }
+    }
+}
+
+package Function {
+    'here, we always assume a is AppRational
+    package AlternatingSeries {
+        class AlternatingSeries<<static>> {
+            {static} sumAlternatingStream:
+            (xs : Stream (Frac a)) -> @0 (IsAlternating xs) -> C a
+        }
+        AlternatingSeries ..> C_
+        AlternatingSeries ..> Stream
+    }
+    package Exp {
+        class Exp<<static>> {
+            {static} smallExp : Σ0 a (IsIn [ negate one , null ]) -> C a
+            {static} expQ : a -> C a
+            {static} e : C a
+            'expQUc is not really going to be used outside here
+            {static} exp : C a -> C a
+        }
+        Exp ..> AlternatingSeries
+    }
+    package SquareRoot {
+        class SquareRoot<<static>> {
+            {static} smallSqrtQ : Σ0 a (λ x -> IsIn [ one , shiftl one 2 [ x) -> C a
+            {static} sqrtQ : Σ0 a (λ x -> null ≤ x) -> C a
+            'same for sqrtQUc
+            {static} sqrt : (x : C a) -> @0 (null ≤ x) -> C a
+        }
+        SquareRoot ..> AlternatingSeries
+    }
+    package Trigonometric {
+        class Trigonometric<<static>> {
+            {static} smallArcTgFracQ : Σ0 (Frac a) (is between -1/2 and 1/2) -> C a
+            ' uses smallArcTgFracQ
+            {static} pi : C a
+            {static} smallSinFracQ : Σ0 (Frac a) (is between -1/2 and 1/2) -> C a
+            {static} sinFracQ : Frac a -> C a
+            {static} sinQ : a -> C a
+            {static} sin : C a -> C a
+        }
+        Trigonometric ..> AlternatingSeries
+    }
+}
+
+package HaskellInstance {
+    package Number {
+        interface Number<<Agda.Builtin.FromNat>> {
+            Constraint : Nat -> Set <<condition on which a Nat can be converted>>
+            fromNat : (n : Nat) -> {{Constraint n}} -> a
+        }
+        Number ..> Nat
+    }
+
+    package Num {
+        interface Num<<Haskell.Prim.Num>> {
+            @0 MinusOK       : a → a → Set
+            @0 NegateOK      : a → Set
+            @0 FromIntegerOK : Integer → Set
+            _+_           : a → a → a
+            _-_           : (x y : a) → @0 {{MinusOK x y}} → a
+            _*_           : a → a → a
+            negate        : (x : a) → @0 {{NegateOK x}} → a
+            abs           : a → a
+            signum        : a → a  <<this will not make sense for reals>>
+            fromInteger   : (n : Integer) → @0 {{FromIntegerOK n}} → a
+        }
+        Num --|> Number
+    }
+
+    package Fractional {
+        interface Fractional<<Haskell.Prim.Fractional>> {
+            @0 RecipOK : a -> Set
+            _/_ : (x y : a) -> @0 {{RecipOK y}} -> a
+            recip : (x : a) -> @0 {{RecipOK x}} -> a
+        }
+        Fractional --|> Num
+    }
+
+    package Floating {
+        interface Floating<<Haskell>> {
+            trigonometric,
+            exponential
+            and logarithmic functions
+        }
+        Floating --|> Fractional
+        C_ ..|> Floating: not complete yet
+    }
+}
+
+/'
+this changes quite rapidly
+package Main {
+    class Main<<static>> {
+        ...
+    }
+}
+'/
+
+@enduml
