@@ -1,0 +1,81 @@
+@startuml operator
+
+package Operator {
+    package Abs {
+        interface Abs {
+            abs : a -> a
+            <<(null ≤ x -> abs x ≃ x)
+                × (x ≤ null -> abs x ≃ negate x)
+        }
+    }
+
+    package Cast {
+        interface Cast<<two-parameter>> {
+            cast : a -> b
+        }
+    }
+
+    package Decidable {
+        interface DecSetoid {
+            _≃#_ : a -> a -> Bool
+            <<decides _≃_>>
+        }
+
+        interface DecLe {
+            _≤#_ : a -> a -> Bool
+            <<decides _≤_>>
+        }
+
+        interface DecLt {
+            _<#_ : a -> a -> Bool
+            <<decides _<_>>
+        }
+    }
+
+    package Pow {
+        interface Pow<<two-parameter>> {
+            <<a and b are SemiRings>>
+            _^_ : a -> b -> a
+            <<preserves equality>>
+            <<x^null is one>>
+            <<x^(one+n) is x*x^n>>
+        }
+
+        ' actually, this might help
+        interface Pow_Nat {
+            _^_ : a -> Nat -> a
+        }
+        interface Pow_Int {
+            _^_ : a -> b -> a
+        }
+    }
+
+    package ShiftL {
+        interface ShiftL {
+            shiftl : a -> Nat -> a
+            <<preserves equality,
+              shifting with zero is the identity function,
+              every shift doubles>>
+        }
+    }
+
+    package Shift {
+        interface Shift {
+            shift : a -> Int -> a
+            <<preserves equality,
+              equivalent with shiftl for nonnegatives,
+              shifting left then right returns the original value>>
+        }
+        Shift --|> ShiftL
+    }
+
+    package ExactShift {
+        interface ExactShift {
+            <<shifting right then left returns the same number>>
+            <<that means there is no loss of precision>>
+        }
+        ExactShift --|> Shift
+    }
+}
+
+@enduml

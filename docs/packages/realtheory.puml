@@ -1,0 +1,100 @@
+@startuml realtheory
+
+package RealTheory {
+    package MetricSpace {
+        interface MetricSpace {
+            ball : PosRational -> a -> a -> Set
+            <<reflexive, symmetric>>
+            <<ball ε₁ x y -> ball ε₂ y z -> ball (ε₁ + ε₂) x y>>
+            <<(∀ (δ : PosRational) -> ball (plusPos ε δ) x y) -> ball ε x y>>
+            <<(∀ (ε : PosRational) -> ball ε x y) -> x ≃ y>>
+        }
+
+        interface PrelengthSpace {
+            << (proj₁ ε < proj₁ δ₁ + proj₁ δ₂) -> @0 (ball ε x y) -> Σ0 a (λ z -> ball δ₁ x z × ball δ₂ z y) >>
+        }
+        PrelengthSpace --|> MetricSpace
+    }
+
+    package Continuity {
+        ' actually, the modulus is in another record named UniformlyContinuous
+        ' but this is easier to understand now
+        class UcFun<<a extends MetricSpace, b extends MetricSpace>> {
+            f : a -> b
+            modulus : PosRational -> PosRational
+            --
+            <<∀ ε x y -> ball (modulus ε) x y -> ball ε (f x) (f y)>>
+        }
+    }
+
+    package Completion {
+        class C<a extends MetricSpace> {
+            fun : PosRational -> a
+            <<∀ (ε₁ ε₂ : PosRational) -> ball (plusPos ε₁ ε₂) (fun ε₁) (fun ε₂)>>
+            --
+            returnC : a -> C a
+            join : C (C a) -> C a
+            mapC : UcFun a b -> (C a -> C b) <<if a is prelength>>
+            bindC : UcFun a (C b) -> UcFun (C a) (C b) <<if both are prelength>>
+            map2 : UcFun a (UcFun b c) -> (C a -> C b -> C c) <<if all are prelength>>
+        }
+        C ..> UcFun
+        C --|> MetricSpace
+        C --|> PrelengthSpace: if a is prelength
+    }
+
+    package AppRational {
+        interface AppRational {
+            appDiv : (x y : a) -> @0 (NonZero y) -> Int -> a
+            appApprox : a -> Int -> a
+            log2Floor : (x : a) -> @0 (null < x) -> Int
+            toDecimal : a -> Nat -> Decimal
+            <<Cast a Rational>>
+            <<Cast Int a>>
+            --
+            <<Cast a Rational is order-embedding,
+                                  strict-order-embedding,
+                                  preserves equality,
+                                  preserves non-zero-ness>>
+            <<Cast Int a preserves semiring operators>>
+            <<appDiv is division with a given precision
+            of a 2-power>>
+            <<appApprox is approximation with a given precision
+            of a 2-power>>
+            <<log2Floor is the lowest exponent k
+            with which 2^k <= x>>
+            <<toDecimal converts to a decimal
+            with a given precision of digits
+            after the decimal point>>
+        }
+        AppRational --|> PrelengthSpace
+    }
+
+    package Real {
+        class C_<a extends AppRational><<if the base type is an AppRational>> {
+            <<Cast (C a) (C Rational)>>
+            compress : C a -> C a <<preserves equality>>
+            NonNegR : C a -> Set <<used for Le>>
+            PosR : C a -> Set <<positivity with erased witness; used for Lt>>
+            PosRT : C a -> Set <<positivity with non-erased witness>>
+            NonZeroRT : C a -> Set <<similarly>>
+            LtT : C a -> C a -> Set <<derived from PosRT>>
+            witnessForPos : (x : C a) -> @0 (PosR x) -> PosRT x
+            witnessForNonZero : (x : C a) -> @0 (NonZero x) -> NonZeroRT x
+            multByAQ : a -> C a -> C a <<faster than normal multiplication>>
+            canonicalBound : (x : C a) -> a <<guaranteed to be >= x>>
+        }
+        C_ *-- AppRational: in a sense
+        C_ --|> C
+    }
+
+    package Instance {
+        ' an instance for Pow (C a) Nat, if a is an AppRational
+        ' TODO: actually, this is in Instance.Pow
+        class Pow_<<static>> {
+            <<an instance for Pow (C_ a) Nat>>
+        }
+    }
+}
+
+@enduml

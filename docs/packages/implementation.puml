@@ -1,0 +1,88 @@
+@startuml implementation
+
+package Implementation {
+    package Nat {
+        class Nat<<Agda.Builtin.Nat>> {
+            zero : Nat <<constructor>>
+            suc : Nat -> Nat <<constructor>>
+        }
+        'Nat --|> SemiRing /'implied by Naturals'/
+
+        interface Naturals {
+            <<a generalisation>>
+            <<the "smallest" semiring>>
+            naturalsToSemiRing : casts to any SemiRing
+            <<it preserves equality>>
+            <<all other functions that can do this are equivalent>>
+        }
+        Nat --|> Naturals
+    }
+
+    package Int {
+        class Int<<Agda.Builtin.Int>> {
+            pos : Nat -> Int <<constructor>>
+            negsuc : Nat -> Int <<constructor>>
+        }
+
+        interface Integers {
+            <<a generalisation>>
+            <<the "smallest" ring>>
+            integersToRing : casts to any Ring
+            <<it preserves equality>>
+            <<all other functions that can do this are equivalent>>
+        }
+
+        Int o-- Nat
+        'Int --|> Ring /'implied by Integers'/
+        Int --|> Integers
+
+        'Int --|> Integers is not yet done
+    }
+
+    package Frac {
+        class Frac<a extends SemiRing> {
+            num : a
+            den : a
+            --
+            <<constructor>>
+            MkFrac : a -> a -> Frac a
+        }
+        ' I add the instances in Rational
+        ' because there are conditions on a
+    }
+
+    package Rational {
+        class Rational {
+            <<a is Int>>
+            <<Cast Int Rational>>
+        }
+        Rational --|> Frac
+        Rational *-- Int
+
+        class PosRational {}
+        PosRational o-- Rational
+        PosRational --|> ErasureProduct
+    }
+
+    package Dyadic {
+        class Dyadic {
+            mant : Int
+            expo : Int
+            --
+            _:|^_ : Int -> Int -> Dyadic <<constructor>>
+        }
+        Dyadic *-- Int
+    }
+
+    package Decimal {
+        class Decimal {
+            decMant : Int
+            decExpo : Int
+            --
+            MkDec : Int -> Int -> Decimal <<constructor>>
+        }
+        Decimal *-- Int
+    }
+}
+
+@enduml

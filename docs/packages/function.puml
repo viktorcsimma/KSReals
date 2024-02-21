@@ -1,0 +1,44 @@
+@startuml function
+
+package Function {
+    'here, we always assume a is AppRational
+    package AlternatingSeries {
+        class AlternatingSeries<<static>> {
+            {static} sumAlternatingStream:
+            (xs : Stream (Frac a)) -> @0 (IsAlternating xs) -> C a
+        }
+    }
+    package Exp {
+        class Exp<<static>> {
+            {static} smallExp : Σ0 a (IsIn [ negate one , null ]) -> C a
+            {static} expQ : a -> C a
+            {static} e : C a
+            'expQUc is not really going to be used outside here
+            {static} exp : C a -> C a
+        }
+        Exp ..> AlternatingSeries
+    }
+    package SquareRoot {
+        class SquareRoot<<static>> {
+            {static} smallSqrtQ : Σ0 a (λ x -> IsIn [ one , shiftl one 2 [ x) -> C a
+            {static} sqrtQ : Σ0 a (λ x -> null ≤ x) -> C a
+            'same for sqrtQUc
+            {static} sqrt : (x : C a) -> @0 (null ≤ x) -> C a
+        }
+        SquareRoot ..> AlternatingSeries
+    }
+    package Trigonometric {
+        class Trigonometric<<static>> {
+            {static} smallArcTgFracQ : Σ0 (Frac a) (is between -1/2 and 1/2) -> C a
+            ' uses smallArcTgFracQ
+            {static} pi : C a
+            {static} smallSinFracQ : Σ0 (Frac a) (is between -1/2 and 1/2) -> C a
+            {static} sinFracQ : Frac a -> C a
+            {static} sinQ : a -> C a
+            {static} sin : C a -> C a
+        }
+        Trigonometric ..> AlternatingSeries
+    }
+}
+
+@enduml

@@ -41,8 +41,6 @@ package Algebra {
             --
             <<additive inverse>>
             negate : a -> a
-            <<derived from negate>>
-            _-_ : a -> a -> a
         }
 
         Ring --|> SemiRing
@@ -97,7 +95,6 @@ package Order {
         <<∀ (x y : a) -> null < x -> null < y -> null < x * y>>
     }
     PseudoRingOrder --|> PseudoOrder
-    PseudoRingOrder --|> Ring
 
     ' not yet used
     interface PseudoSemiRingOrder {
@@ -113,18 +110,14 @@ package Order {
     interface FullPseudoSemiRingOrder {
         <<x ≤ y ↔ (y < x -> ⊥)>>
     }
-
-    Le --|> Setoid
-    Lt --|> Setoid
-    PseudoOrder --|> StrongSetoid
     PartialOrder --|> Le
     StrictOrder --|> Lt
     PseudoOrder --|> Lt
     PseudoSemiRingOrder --|> PseudoOrder
-    PseudoSemiRingOrder --|> SemiRing
     FullPseudoSemiRingOrder --|> PseudoSemiRingOrder
     FullPseudoSemiRingOrder --|> Le
 }
+Order ..> Algebra
 
 package Operator {
     package Abs {
@@ -133,8 +126,6 @@ package Operator {
             <<(null ≤ x -> abs x ≃ x)
                 × (x ≤ null -> abs x ≃ negate x)
         }
-        Abs --|> Ring
-        Abs --|> Le
     }
 
     package Cast {
@@ -148,19 +139,16 @@ package Operator {
             _≃#_ : a -> a -> Bool
             <<decides _≃_>>
         }
-        DecSetoid --|> Setoid
 
         interface DecLe {
             _≤#_ : a -> a -> Bool
             <<decides _≤_>>
         }
-        DecLe --|> Le
 
         interface DecLt {
             _<#_ : a -> a -> Bool
             <<decides _<_>>
         }
-        DecLt --|> Lt
     }
 
     package Pow {
@@ -188,7 +176,6 @@ package Operator {
               shifting with zero is the identity function,
               every shift doubles>>
         }
-        ShiftL --|> SemiRing
     }
 
     package Shift {
@@ -209,6 +196,8 @@ package Operator {
         ExactShift --|> Shift
     }
 }
+Operator ..> Algebra
+Operator ..> Order
 
 package Implementation {
     package Nat {
@@ -217,8 +206,6 @@ package Implementation {
             suc : Nat -> Nat <<constructor>>
         }
         'Nat --|> SemiRing /'implied by Naturals'/
-        Nat --|> Decidable
-        Nat --|> Pow_Nat
 
         interface Naturals {
             <<a generalisation>>
@@ -227,9 +214,7 @@ package Implementation {
             <<it preserves equality>>
             <<all other functions that can do this are equivalent>>
         }
-        Naturals --|> SemiRing
         Nat --|> Naturals
-        Nat --|> ShiftL
     }
 
     package Int {
@@ -248,13 +233,7 @@ package Implementation {
 
         Int o-- Nat
         'Int --|> Ring /'implied by Integers'/
-        Int --|> Decidable
-        Int --|> PseudoOrder
-        Int --|> Abs
-        Int --|> Shift
-        Int --|> Pow_Nat
         Int --|> Integers
-        Integers --|> Ring
 
         'Int --|> Integers is not yet done
     }
@@ -278,12 +257,10 @@ package Implementation {
         }
         Rational --|> Frac
         Rational *-- Int
-        Rational --|> Field
 
         class PosRational {}
         PosRational o-- Rational
         PosRational --|> ErasureProduct
-        MetricSpace ..> PosRational
     }
 
     package Dyadic {
@@ -304,9 +281,13 @@ package Implementation {
             MkDec : Int -> Int -> Decimal <<constructor>>
         }
         Decimal *-- Int
-        Decimal ..|> AppRational: not complete yet
     }
 }
+Implementation ..> Algebra
+Implementation ..> Order
+Implementation ..> Operator
+' see PosRational
+Implementation ..> Tool
 
 package RealTheory {
     package MetricSpace {
@@ -317,8 +298,6 @@ package RealTheory {
             <<(∀ (δ : PosRational) -> ball (plusPos ε δ) x y) -> ball ε x y>>
             <<(∀ (ε : PosRational) -> ball ε x y) -> x ≃ y>>
         }
-        MetricSpace --|> Setoid
-        MetricSpace ..> PosRational
 
         interface PrelengthSpace {
             << (proj₁ ε < proj₁ δ₁ + proj₁ δ₂) -> @0 (ball ε x y) -> Σ0 a (λ z -> ball δ₁ x z × ball δ₂ z y) >>
@@ -335,7 +314,6 @@ package RealTheory {
             --
             <<∀ ε x y -> ball (modulus ε) x y -> ball ε (f x) (f y)>>
         }
-        UcFun ..> PosRational
     }
 
     package Completion {
@@ -350,7 +328,6 @@ package RealTheory {
             map2 : UcFun a (UcFun b c) -> (C a -> C b -> C c) <<if all are prelength>>
         }
         C ..> UcFun
-        C --|> MetricSpace
         C --|> PrelengthSpace: if a is prelength
     }
 
@@ -378,16 +355,7 @@ package RealTheory {
             with a given precision of digits
             after the decimal point>>
         }
-        AppRational --|> PartialOrder
-        AppRational --|> PseudoOrder
-        AppRational --|> Decidable
-        AppRational --|> StrongSetoid
-        AppRational --|> Abs
-        AppRational --|> ExactShift
         AppRational --|> PrelengthSpace
-        AppRational --|> Pow_Nat
-        Dyadic --|> AppRational
-        Rational --|> AppRational
     }
 
     package Real {
@@ -406,12 +374,6 @@ package RealTheory {
         }
         C_ *-- AppRational: in a sense
         C_ --|> C
-        C_ --|> Le
-        C_ --|> Lt
-        C_ --|> Field
-        C_ --|> Abs
-        C_ --|> ExactShift
-        C_ --|> Pow_Nat
     }
 
     package Instance {
@@ -422,6 +384,10 @@ package RealTheory {
         }
     }
 }
+RealTheory ..> Algebra
+RealTheory ..> Order
+RealTheory ..> Operator
+RealTheory ..> Implementation
 
 package Tool {
     package Cheat {
@@ -471,8 +437,6 @@ package Function {
             {static} sumAlternatingStream:
             (xs : Stream (Frac a)) -> @0 (IsAlternating xs) -> C a
         }
-        AlternatingSeries ..> C_
-        AlternatingSeries ..> Stream
     }
     package Exp {
         class Exp<<static>> {
@@ -506,6 +470,8 @@ package Function {
         Trigonometric ..> AlternatingSeries
     }
 }
+Function ..> RealTheory
+Function ..> Tool
 
 package HaskellInstance {
     package Number {
@@ -513,7 +479,6 @@ package HaskellInstance {
             Constraint : Nat -> Set <<condition on which a Nat can be converted>>
             fromNat : (n : Nat) -> {{Constraint n}} -> a
         }
-        Number ..> Nat
     }
 
     package Num {
@@ -548,20 +513,16 @@ package HaskellInstance {
             and logarithmic functions
         }
         Floating --|> Fractional
-        C_ ..|> Floating: not complete yet
     }
 
     package Show {
         interface Show<<Haskell.Prim.Show>> {
             show : a -> String
         }
-        Nat --|> Show
-        Int --|> Show
-        Rational --|> Show
-        Decimal --|> Show
-        Dyadic --|> Show
     }
 }
+HaskellInstance ..> Implementation
+HaskellInstance ..> RealTheory
 
 /'
 this changes quite rapidly

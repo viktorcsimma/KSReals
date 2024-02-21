@@ -1,0 +1,103 @@
+@startuml runtime
+
+package Acorn<<Agda>> #addfff {
+    ' These are only the things
+    ' that are to be directly used in the calculator.
+    ' There is going to be a complete plan
+    ' about all the types and typeclasses in Acorn.
+
+    interface AppRational {
+        --
+        [...]
+        {static} shift : AppRational -> Int -> AppRational
+        {static} appDiv : AppRational -> AppRational -> Int -> AppRational
+        {static} appApprox : AppRational -> Int -> AppRational
+        ' rounds to a decimal with a given precision
+        {static} toDecimal : AppRational -> Nat -> Decimal
+    }
+
+    class C<aq implements AppRational> {
+        fun : PosRational -> aq
+    }
+
+    class PosRational {
+        ' this is actually S0 Rational
+        unwrap : Rational
+    }
+
+    class Rational {
+        num : Int
+        den : Int
+        --
+        {static} MkFrac : Int -> Int -> Rational <<constructor>>
+    }
+
+    class Dyadic {
+        mant : Int
+        expo : Int
+        --
+        {static} (:|^) : Int -> Int -> Dyadic <<constructor>>
+    }
+
+    class Decimal {
+        decMant : Int
+        decExpo : Int
+        --
+        {static} MkDec :: Int -> Int -> Decimal <<constructor>>
+        ' rounds to a given number of digits after the decimal point
+        {static} roundDecimal :: Decimal -> Int -> Decimal
+        {static} show :: Decimal -> String
+    }
+
+    class Int {
+        --
+        {static} pos : Nat -> Int <<constructor>>
+        {static} negsuc : Nat -> Int <<constructor>>
+    }
+
+    class Nat {
+        {static} zero : Nat <<constructor>>
+        {static} suc : Nat -> Nat <<constructor>>
+    }
+
+    C *-- AppRational: in a sense
+    PosRational *-- Rational
+    AppRational <|-- Dyadic
+    AppRational <|-- Rational
+    AppRational <|.. Decimal: not complete yet
+    C ..> PosRational
+    Dyadic *-- Int
+    Decimal *-- Int
+    Rational *-- Int
+    Int *-- Nat
+
+    ' this has an additional value;
+    ' I think adding other packages
+    ' would just complicate it
+    package Algebra {
+        interface SemiRing {
+            --
+            {static} _+_ : a -> a -> a
+            {static} _*_ : a -> a -> a
+            {static} null : a
+            {static} one : a
+        }
+        interface Ring {
+            --
+            {static} negate : a -> a
+            {static} _-_ : a -> a -> a
+        }
+        interface Field {
+            {static} recip : (x : a) -> @0 NonZero x -> a
+        }
+    }
+
+    Nat --|> SemiRing
+    Int --|> Ring
+    Ring --|> SemiRing
+    Field --|> Ring
+    Rational --|> Field
+    C --|> Field
+}
+
+@enduml

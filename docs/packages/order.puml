@@ -1,0 +1,63 @@
+@startuml order
+
+package Order {
+    interface Le {
+        --
+        _≤_ : a -> a -> Set
+    }
+
+    interface PartialOrder {
+        --
+        << _≤_ preserves equality>>
+    }
+
+    interface Lt {
+        --
+        _<_ : a -> a -> Set
+    }
+
+    interface StrictOrder {
+        --
+        <<_<_ is irreflexive, transitive,
+            and preserves equality >>
+    }
+
+    interface PseudoOrder {
+        --
+        <<_<_ is asymmetric, cotransitive,
+            and total>>
+    }
+
+    ' not yet used
+    interface PseudoRingOrder {
+        --
+        <<∀ (x y z w : a) -> x * y >< z * w -> Either (x >< z) (z >< w)>>
+        <<∀ {z x y : a} -> x < y -> z + x < z + y>>
+        <<∀ (x y : a) -> null < x -> null < y -> null < x * y>>
+    }
+    PseudoRingOrder --|> PseudoOrder
+
+    ' not yet used
+    interface PseudoSemiRingOrder {
+        --
+        <<∀ x y -> (y < x -> ⊥) -> Σ0 a (λ z -> y ≃ x + z)>>
+        <<∀ {z x y : a} -> x < y -> z + x < z + y>>
+        <<∀ {z x y : a} -> z + x < z + y -> x < y>>
+        <<∀ (x y z w : a) -> x * y >< z * w -> Either (x >< z) (z >< w)>>
+        <<∀ (x y : a) -> null < x -> null < y -> null < x * y>>
+    }
+
+    ' not yet used
+    interface FullPseudoSemiRingOrder {
+        <<x ≤ y ↔ (y < x -> ⊥)>>
+    }
+
+    PartialOrder --|> Le
+    StrictOrder --|> Lt
+    PseudoOrder --|> Lt
+    PseudoSemiRingOrder --|> PseudoOrder
+    FullPseudoSemiRingOrder --|> PseudoSemiRingOrder
+    FullPseudoSemiRingOrder --|> Le
+}
+
+@enduml

@@ -1,0 +1,44 @@
+@startuml tool
+
+package Tool {
+    package Cheat {
+        class Cheat<<static>> {
+            {static} cheat : "anything"
+        }
+    }
+
+    package ErasureProduct {
+        class Σ0<<two-parameter; b : a to Set j>> {
+            proj₁ : a
+            @0 proj₂ : b proj₁
+            --
+            _:&:_ : a -> b a -> Σ0 a b <<constructor>>
+            prefixCon : a -> b a -> Σ0 a b <<a prefix alias; agda2hs sometimes needs it>>
+        }
+    }
+
+    package PropositionalEquality {
+        class PropositionalEquality<<static>> {
+            {static} cong sym trans subst : properties of _≡_
+        }
+    }
+
+    package Relation {
+        class Relation<<static>> {
+            _↔_ : Set -> Set -> Set
+            <<an Either for any levels>>
+            _⊎_ : Set i -> Set j -> Set (i ⊔ j)
+        }
+    }
+
+    package Stream {
+        class Stream<<coinductive>> {
+            streamHead : a
+            streamTail : Stream a
+            --
+            mkStream : a -> Stream a -> Stream a <<constructor>>
+        }
+    }
+}
+
+@enduml

@@ -1,0 +1,52 @@
+@startuml haskellinstance
+
+package HaskellInstance {
+    package Number {
+        interface Number<<Agda.Builtin.FromNat>> {
+            Constraint : Nat -> Set <<condition on which a Nat can be converted>>
+            fromNat : (n : Nat) -> {{Constraint n}} -> a
+        }
+    }
+
+    package Num {
+        interface Num<<Haskell.Prim.Num>> {
+            @0 MinusOK       : a → a → Set
+            @0 NegateOK      : a → Set
+            @0 FromIntegerOK : Integer → Set
+            _+_           : a → a → a
+            _-_           : (x y : a) → @0 {{MinusOK x y}} → a
+            _*_           : a → a → a
+            negate        : (x : a) → @0 {{NegateOK x}} → a
+            abs           : a → a
+            signum        : a → a  <<this will not make sense for reals>>
+            fromInteger   : (n : Integer) → @0 {{FromIntegerOK n}} → a
+        }
+        Num --|> Number
+    }
+
+    package Fractional {
+        interface Fractional<<Haskell.Prim.Fractional>> {
+            @0 RecipOK : a -> Set
+            _/_ : (x y : a) -> @0 {{RecipOK y}} -> a
+            recip : (x : a) -> @0 {{RecipOK x}} -> a
+        }
+        Fractional --|> Num
+    }
+
+    package Floating {
+        interface Floating<<Haskell>> {
+            trigonometric,
+            exponential
+            and logarithmic functions
+        }
+        Floating --|> Fractional
+    }
+
+    package Show {
+        interface Show<<Haskell.Prim.Show>> {
+            show : a -> String
+        }
+    }
+}
+
+@enduml

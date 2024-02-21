@@ -1,0 +1,61 @@
+@startuml algebra
+
+package Algebra {
+    package Setoid {
+        interface Setoid {
+            --
+            <<reflexive, symmetric, transitive>>
+            _≃_ : a -> a -> Set
+        }
+
+        interface StrongSetoid {
+            --
+            <<irreflexive, symmetric, cotransitive,
+            equivalent with "not _≃_">>
+            _><_ : a -> a -> Set
+        }
+
+        StrongSetoid --|> Setoid
+    }
+
+    package SemiRing {
+        interface SemiRing {
+            --
+            <<Abelian operator>>
+            _+_ : a -> a -> a
+            <<monoid operator,
+              distributive with respect to addition>>
+            _*_ : a -> a -> a
+            null : a
+            one : a
+            NonZero : a -> Set
+            NonZeroOne : NonZero one
+        }
+
+        SemiRing --|> Setoid
+    }
+
+    package Ring {
+        interface Ring {
+            --
+            <<additive inverse>>
+            negate : a -> a
+        }
+
+        Ring --|> SemiRing
+    }
+
+    package Field {
+        interface Field {
+            recip : (x : a) -> NonZero x -> a
+            <<f x y >< f z w -> Either (x >< z) (z >< w)>>
+            <<recip preserves equality
+              and is a multiplicative inverse>>
+        }
+
+        Field --|> Ring
+        Field --|> StrongSetoid
+    }
+}
+
+@enduml
