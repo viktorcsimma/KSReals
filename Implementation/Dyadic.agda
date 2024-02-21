@@ -18,7 +18,6 @@ import Implementation.Frac
 import Implementation.Rational
 import Algebra.SemiRing
 import Algebra.Ring
-import RealTheory.MetricSpace
 #-}
 
 open import Agda.Builtin.Unit
@@ -46,7 +45,6 @@ open import Operator.ExactShift
 open import Operator.Pow
 open import Operator.Decidable
 open import Algebra.Order
-open import RealTheory.MetricSpace
 open import Tool.ErasureProduct
 
 -- For the sake of simplicity, we now use the concrete Int type.
@@ -238,97 +236,3 @@ instance
   Abs.abs absDyadic x = abs (mant x) :|^ expo x
   Abs.absCorrect absDyadic x = cheat , cheat
   {-# COMPILE AGDA2HS absDyadic #-}
-
-  metricSpaceDyadic : MetricSpace Dyadic
-  MetricSpace.setoid metricSpaceDyadic = setoidDyadic
-  MetricSpace.ball metricSpaceDyadic ε x y = ball ε (dToQSlow x) (dToQSlow y)
-  MetricSpace.ballReflexive metricSpaceDyadic ε x x' eq
-      = ballReflexive ε (dToQSlow x) (dToQSlow x') eq
-  MetricSpace.ballSym metricSpaceDyadic ε x y x≤y
-      = ballSym ε (dToQSlow x) (dToQSlow y) x≤y
-  MetricSpace.ballTriangle metricSpaceDyadic ε₁ ε₂ x y z x≤y y≤z
-      = ballTriangle ε₁ ε₂ (dToQSlow x) (dToQSlow y) (dToQSlow z) x≤y y≤z
-  MetricSpace.ballClosed metricSpaceDyadic ε x y f
-      = ballClosed ε (dToQSlow x) (dToQSlow y) f
-  MetricSpace.ballEq metricSpaceDyadic x y f = ballEq (dToQSlow x) (dToQSlow y) f
-  {-# COMPILE AGDA2HS metricSpaceDyadic #-}
-
-  {-# TERMINATING #-}
-  prelengthSpaceDyadic : PrelengthSpace Dyadic
-  PrelengthSpace.metricSpace prelengthSpaceDyadic = metricSpaceDyadic
-  PrelengthSpace.prelength prelengthSpaceDyadic     eps
-                                                    d1
-                                                    d2
-                                                    x y
-                                                    ε<δ₁+δ₂
-                                                    bεxy
-  -- We'll use an iterative method: we always add the lowest 2-power
-  -- we can to approximate x+δ₁ (or x-δ₁).
-      = go x goal (x ≤# y) currPrec steps :&: (cheat , cheat)
-     where
-     goal : Rational
-     goal = if x ≤# y
-            then dToQSlow x + proj₁ d1
-            else dToQSlow x + negate (proj₁ d1)
-     approx : PosRational -> Int   -- an exponent of 2 for which q<=2^k
-     approx q = pos (goApprox (proj₁ q) 0)
-       where
-       goApprox : Rational -> Nat -> Nat
-       goApprox q n = if q ≤# one then n
-                        else goApprox (shift q (the Int (negsuc 0))) (1 + n)
-     currPrec : Int
-     currPrec = approx d1
-     desiredPrec : Int
-     desiredPrec = approx (proj₁ d1 + proj₁ d2 + negate (proj₁ eps)
-                             :&: cheat)
-     steps : Nat
-     steps = if currPrec ≤# desiredPrec then 0 else natAbs (currPrec + negate desiredPrec)
-     
-     go : (d : Dyadic) (q : Rational) (isAbove : Bool)
-             (currentPrecision : Int) (remainingSteps : Nat) -> Dyadic
-            -- ^ this is the exponent of 2
-            -- and remainingSteps means how many times we need to subtract one from it
-     go d _ _ _ zero = d
-     go d q isAbove currPrec (suc n) =
-             if (abs ((dToQSlow d) + negate q) ≤# shift one (negsuc 0 + currPrec))
-             then go d q isAbove (negsuc 0 + currPrec) n
-             else go (d + step isAbove currPrec) q isAbove (negsuc 0 + currPrec) n
-       where
-       step : Bool -> Int -> Dyadic
-       step true  currPrec = pos 1    :|^ (negsuc 0 + currPrec)
-       step false currPrec = negsuc 0 :|^ (negsuc 0 + currPrec)
-  -- Again suc...
-  {-# FOREIGN AGDA2HS
-  instance PrelengthSpace Dyadic where
-    prelength eps d1 d2 x y = (go x goal (x ≤# y) currPrec steps :&:)
-      where
-        goal :: Rational
-        goal
-          = if x ≤# y then dToQSlow x + proj₁ d1 else
-              dToQSlow x + negate (proj₁ d1)
-        approx :: PosRational -> Integer
-        approx q = pos (goApprox (proj₁ q) 0)
-          where
-            goApprox :: Rational -> Natural -> Natural
-            goApprox q n
-              = if q ≤# one then n else goApprox (shift q (negsuc 0)) (1 + n)
-        currPrec :: Integer
-        currPrec = approx d1
-        desiredPrec :: Integer
-        desiredPrec = approx (proj₁ d1 + proj₁ d2 + negate (proj₁ eps) :&:)
-        steps :: Natural
-        steps
-          = if currPrec ≤# desiredPrec then 0 else
-              natAbs (currPrec + negate desiredPrec)
-        go :: Dyadic -> Rational -> Bool -> Integer -> Natural -> Dyadic
-        go d _ _ _ 0 = d
-        go d q isAbove currPrec sn =
-                if (abs ((dToQSlow d) + negate q) ≤# shift one (negate 1 + currPrec))
-                then go d q isAbove (negate 1 + currPrec) (sn Prelude.- 1)
-                else go (d + step isAbove currPrec) q isAbove (negate 1 + currPrec) (sn Prelude.- 1)
-          where
-          step :: Bool -> Int -> Dyadic
-          step True  currPrec = 1         :|^ (negate 1 + currPrec)
-          step False currPrec = negate 1  :|^ (negate 1 + currPrec)
-  #-}
-

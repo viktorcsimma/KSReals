@@ -19,8 +19,6 @@ open import Tool.ErasureProduct
 import Prelude hiding (head, tail)
 import qualified Prelude (head, tail)
 
-import Numeric.Natural
-import Implementation.Nat
 import Tool.ErasureProduct
 #-}
 
@@ -111,7 +109,7 @@ countWhile p xs hyp = go p xs hyp 0
          -> Nat
          -> (Σ0 Nat (λ n -> p n (index xs n) ≡ false))
   go p xs hyp k = if (p k (head xs))
-                  then proj₁ (go p (tail xs) cheat (suc k)) :&: cheat
+                  then proj₁ (go p (tail xs) cheat (1 + k)) :&: cheat
                   else k :&: cheat
 {-# COMPILE AGDA2HS countWhile #-}
 

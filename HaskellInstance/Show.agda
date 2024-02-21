@@ -2,7 +2,7 @@
 -- (mainly for Dyadics, as they will be primarily used).
 {-# OPTIONS --erasure #-}
 
-module Tool.Show where
+module HaskellInstance.Show where
 
 {-# FOREIGN AGDA2HS
 import Implementation.Frac
