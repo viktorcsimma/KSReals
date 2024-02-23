@@ -59,7 +59,7 @@ package Implementation {
         Rational --|> Frac
         Rational *-- Int
 
-        class PosRational {}
+        class PosRational
         PosRational o-- Rational
         PosRational --|> ErasureProduct
     }

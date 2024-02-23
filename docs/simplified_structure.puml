@@ -1,4 +1,4 @@
-@startuml structure
+@startuml simplified_structure
 allowmixing
 
 package Algebra {
@@ -258,7 +258,7 @@ package Implementation {
         Rational --|> Frac
         Rational *-- Int
 
-        class PosRational {}
+        class PosRational
         PosRational o-- Rational
         PosRational --|> ErasureProduct
     }

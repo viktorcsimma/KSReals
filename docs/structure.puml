@@ -280,7 +280,7 @@ package Implementation {
         Rational *-- Int
         Rational --|> Field
 
-        class PosRational {}
+        class PosRational
         PosRational o-- Rational
         PosRational --|> ErasureProduct
         MetricSpace ..> PosRational
