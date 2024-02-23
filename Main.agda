@@ -9,8 +9,8 @@
 import Prelude (Integer, putStrLn)
 import Implementation.Int (pos)
 
-import RealTheory.Reals
-import Tool.Show
+import RealTheory.Real
+import HaskellInstance.Show
 #-}
 
 open import Agda.Builtin.Unit
@@ -32,25 +32,25 @@ open import Operator.Decidable
 open import Operator.Shift
 open import RealTheory.AppRational
 open import RealTheory.Completion
-open import RealTheory.Reals
+import RealTheory.MetricSpace
+open import RealTheory.Real
 open import Implementation.Nat
 open import Implementation.Int
 open import Implementation.Frac
 open import Implementation.Rational
 open import Implementation.Dyadic
-open import Implementation.DyadicReal
 open import Function.Exp
-open import Tool.Show
+open import HaskellInstance.Show
 
 postulate putStrLn : Haskell.Prim.String.String → Agda.Builtin.IO.IO ⊤
 
 -- TODO: sin pi seems to only have a precision of 998 digits instead of 1000.
 
 prec : Rational
-prec = MkFrac (one) (shift one (pos 33225)) cheat -- 33220 that is log₂ (10^10000))
+prec = MkFrac (one) (shift one (pos 33225)) cheat -- 33220 is log₂ (10^10000))
 {-# COMPILE AGDA2HS prec #-}
 
-toCalc : DReal
+toCalc : C Dyadic
 toCalc = e
 {-# COMPILE AGDA2HS toCalc #-}
 
