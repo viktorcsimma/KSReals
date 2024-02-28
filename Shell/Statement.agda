@@ -9,6 +9,7 @@ open import Haskell.Prim.String
 
 open import Shell.Exp
 
+-- Represents a command given to the calculator.
 -- real is the real type used.
 data Statement (real : Set) : Set where
   Empty : Statement real -- the empty statement (empty string or only whitespace)

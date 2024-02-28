@@ -418,6 +418,12 @@ multByAQ a = mapC ((λ b -> a * b) :^: WrapMod
                          -> multByAQ q x ≃ returnC q * x
 multByAQCorrect = cheat
 
+-- Similarly for addition.
+addAQ : ∀ {a : Set} {{ara : AppRational a}}
+                 -> a -> C a -> C a
+addAQ a = mapC ((λ b -> a + b) :^: WrapMod id cheat)
+{-# COMPILE AGDA2HS addAQ #-}
+
 -- The canonical bound is an AQ which is guaranteed to be greater than or equal to x.
 -- Sometimes, it's more beneficial for it to be even negative;
 -- e.g. when we need an interval like ]-∞, canonicalBound x ].

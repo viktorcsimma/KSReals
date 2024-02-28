@@ -13,6 +13,7 @@ import Data.Bits (shift)
 -- It doesn't import the classes' methods by itself.
 -- Maybe we should fix that in agda2hs if the problem is there.
 
+import Operator.Cast
 import Operator.Decidable
 import Operator.Abs
 import Operator.Pow
@@ -44,6 +45,7 @@ open import Haskell.Prim.Integer using (IsNonNegativeInteger)
 
 open import Tool.PropositionalEquality
 open import Algebra.Setoid
+open import Operator.Cast
 open import Operator.Decidable
 open import Algebra.SemiRing
 open import Algebra.Ring
@@ -320,6 +322,14 @@ instance
         go :: Integer -> Natural -> Integer -> Integer
         go base 0 res = res
         go base exp res = go (base * base) (exp `Prelude.div` 2) (if (Prelude.even exp) then res else res * base)
+  #-}
+
+  -- With this, we can circumvent pos.
+  castNatInt : Cast Nat Int
+  Cast.cast castNatInt = pos
+  {-# FOREIGN AGDA2HS
+  instance Cast Natural Integer where
+    cast = Prelude.fromIntegral
   #-}
 
 {-

@@ -19,7 +19,7 @@ open import Haskell.Prim.Eq
 open import Haskell.Prim.Foldable
 open import Haskell.Prim.Functor
 open import Haskell.Prim.Applicative
-open import Haskell.Prim.Alternative
+open import Haskell.Control.Alternative
 open import Haskell.Prim.Monad
 open Do
 import Haskell.Prim.Int
@@ -155,8 +155,8 @@ string = mapM₋ char
 {-# COMPILE AGDA2HS string #-}
 
 natural : Parser Nat
-natural = foldl (\acc a -> acc * 10 + a) (error {absurd = cheat} "foldl was called on an empty Foldable") <$> some digit
-                                       -- ^ in theory, this will never be used, because `some` would return Left then
+natural = foldl (\acc a -> acc * 10 + a) 0 <$> some digit
+                                      -- ^ in theory, this will never be used, because `some` would return Left then
 {-# COMPILE AGDA2HS natural #-}
 
 integer : Parser Int
@@ -273,23 +273,61 @@ pBool : {real : Set} -> Parser (Exp real)
 pBool = BoolLit <$> (true <$ string' "true" <|> false <$ string' "false")
 {-# COMPILE AGDA2HS pBool #-}
 
--- Parsing anything that is considered to be atomic:
+-- Contains reserved keywords and function names.
+keywords : List String                                       -- v we reserve these; maybe we will use them later
+keywords = "for" ∷ "if" ∷ "while" ∷ "do" ∷ "true" ∷ "false" ∷ "bool" ∷ "int" ∷ "rational" ∷ "real" ∷ "history"
+         ∷ "pi" ∷ "e" ∷ "exp" ∷ "sqrt" ∷ "sin" ∷ "cos" ∷ "tg" ∷ []
+{-# COMPILE AGDA2HS keywords #-}
+
+-- Parses identifiers.
+pIdent' : Parser String
+pIdent' = do
+  x <- some (satisfy isAlpha) <* ws
+  if elem x keywords
+    then failWith ("unexpected keyword \"" ++ x ++ "\"")
+    else pure x
+{-# COMPILE AGDA2HS pIdent' #-}
+
+pKeyword' : String -> Parser ⊤
+pKeyword' s = do
+  string s
+  -- if there are other letters not separated by whitespace from the keyword,
+  -- then fail
+  (satisfy isAlpha *> failWith ("keyword \"" ++ s ++ "\" continues with other characters")) <|> ws
+{-# COMPILE AGDA2HS pKeyword' #-}
+
+-- Parsing real constants.
+pRealConst : {real : Set} -> Parser (Exp real)
+pRealConst = (Pi <$ pKeyword' "pi") <|>
+             (E  <$ pKeyword' "e")
+{-# COMPILE AGDA2HS pRealConst #-}
+
+-- pAtom: Parsing anything that is considered to be atomic:
 -- an integer literal, a boolean literal, a variable name
 -- or an expression between parantheses.
 -- Here, we actually only parse integers without a negation sign,
 -- as that is going to be treated as a prefix operator.
 {-# TERMINATING #-}
 pAtom pExp : {real : Set} -> Parser (Exp real)
-pAtom = ((IntLit ∘ pos) <$>  natural') <|> pBool <|> (Var <$> some (satisfy isAlpha) <* ws) <|> between (char' '(') pExp (char' ')')
+pAtom = ((IntLit ∘ pos) <$>  natural') <|> pBool <|> pRealConst <|> (Var <$> pIdent') <|> between (char' '(') pExp (char' ')')
 {-# COMPILE AGDA2HS pAtom #-}
 
 -- negation
 pNeg : {real : Set} -> Parser (Exp real)
-pNeg = Neg <$> (char' '-' *> pAtom)
+pNeg = Neg <$> (char' '-' *> pAtom) <|> pAtom
 {-# COMPILE AGDA2HS pNeg #-}
 
+-- Parsing real functions.
+pRealFun : {real : Set} -> Parser (Exp real)
+pRealFun = (Expo <$> (pKeyword' "exp" *> pNeg)) <|>
+           (Sqrt <$> (pKeyword' "sqrt" *> pNeg)) <|>
+           (Sin  <$> (pKeyword' "sin" *> pNeg)) <|>
+           (Cos  <$> (pKeyword' "cos" *> pNeg)) <|>
+           pNeg
+{-# COMPILE AGDA2HS pRealFun #-}
+
 pNot : {real : Set} -> Parser (Exp real)
-pNot = Not <$> (char' '!' *> pNeg)
+pNot = Not <$> (char' '!' *> pRealFun) <|> pRealFun
 {-# COMPILE AGDA2HS pNot #-}
 
 pDiv : {real : Set} -> Parser (Exp real)
@@ -328,32 +366,18 @@ pOr : {real : Set} -> Parser (Exp real)
 pOr = chainl1 pAnd (Or <$ string' "||")
 {-# COMPILE AGDA2HS pOr #-}
 
--- The one with the least precedence.
+-- Parses an expression.
+-- Actually, it is an alias for
+-- the operator with the least precedence.
 -- pExp : {real : Set} -> Parser (Exp real)
 pExp = pOr
 {-# COMPILE AGDA2HS pExp #-}
 
--- a C-style syntax
-keywords : List String                                       -- v we reserve these; maybe we will use them later
-keywords = "for" ∷ "if" ∷ "while" ∷ "do" ∷ "true" ∷ "false" ∷ "bool" ∷ "int" ∷ "rational" ∷ "real" ∷ []
-{-# COMPILE AGDA2HS keywords #-}
-
--- identifiers
-pIdent' : Parser String
-pIdent' = do
-  x <- some (satisfy isAlpha) <* ws
-  if elem x keywords
-    then failWith ("unexpected keyword \"" ++ x ++ "\"")
-    else pure x
-{-# COMPILE AGDA2HS pIdent' #-}
-
-pKeyword' : String -> Parser ⊤
-pKeyword' s = do
-  string s
-  -- if there are other letters not separated by whitespace from the keyword,
-  -- then fail
-  (satisfy isAlpha *> failWith "keyword continues with other characters") <|> ws
-{-# COMPILE AGDA2HS pKeyword' #-}
+-- Parse a history reference in the form of "history[n]".
+-- E.g. history[1] will be the result of the last but one statement.
+pHistory' : {real : Set} -> Parser (Exp real)
+pHistory' = History <$> (pKeyword' "history" *> char' '[' *> natural' <* char' ']')
+{-# COMPILE AGDA2HS pHistory' #-}
 
 {-# TERMINATING #-}
 pStatement : {real : Set} -> Parser (Statement real)
@@ -364,7 +388,7 @@ pProgram : {real : Set} -> Parser (List (Statement real))
 pProgram = sepBy1 pStatement (char' ';')
 {-# COMPILE AGDA2HS pProgram #-}
 
--- statement : Parser Statement
+-- statement : {real : Set} -> Parser (Statement real)
 pStatement = (Assign <$> pIdent' <*> (char' '=' *> (pExp <* ws)))
   <|> If <$> (pKeyword' "if" *> (pExp <* ws)) <*> (char' '{' *> pProgram) <* char' '}'
   <|> While <$> (pKeyword' "while" *> (pExp <* ws)) <*> (char' '{' *> pProgram) <* char' '}'
