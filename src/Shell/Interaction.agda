@@ -151,6 +151,14 @@ reevalCommand ptr prec = do
   case mAns of
     Nothing -> newCString "0"
     Just val -> newCString $ showValue val (fromIntegral prec)
+reevalCommandDyadic :: StablePtr (CalcState (C Dyadic)) -> CInt -> IO CString
+reevalCommandDyadic = reevalCommand
+foreign export ccall reevalCommandDyadic
+  :: StablePtr (CalcState (C Dyadic)) -> CInt -> IO CString
+reevalCommandRational :: StablePtr (CalcState (C Rational)) -> CInt -> IO CString
+reevalCommandRational = reevalCommand
+foreign export ccall reevalCommandRational
+  :: StablePtr (CalcState (C Rational)) -> CInt -> IO CString
 
 -- Frees the StablePtr pointing to the CalcState instance.
 destructCalcDyadic :: StablePtr (CalcState (C Dyadic)) -> IO ()

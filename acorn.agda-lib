@@ -1,4 +1,4 @@
 name: acorn
 depend:
   agda2hs
-include: .
+include: src

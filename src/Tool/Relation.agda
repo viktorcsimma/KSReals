@@ -8,12 +8,6 @@ open import Agda.Primitive
 open import Haskell.Prim.Tuple
 open import Haskell.Prim using (⊥)
 
--- Logical equivalence.
-infix 2 _↔_
-_↔_ : Set -> Set -> Set
-a ↔ b = (a -> b) × (b -> a)
-{-# COMPILE AGDA2HS _↔_ #-}
-
 -- An Either which can be used for any levels.
 data _⊎_ {i j} (a : Set i) (b : Set j) : Set (i ⊔ j) where
   inl : a -> a ⊎ b

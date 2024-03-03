@@ -3,6 +3,12 @@
 
 module Main where
 
+-- We put the shell modules here too
+-- so that they get compiled by agda2hs.
+
+import Shell.CalcState
+import Shell.Interaction
+
 {-# FOREIGN AGDA2HS
 
 import Data.Text (unpack, strip, pack)

@@ -11,6 +11,7 @@ open import Agda.Builtin.Unit
 open import Agda.Builtin.FromNat
 open import Agda.Builtin.Nat using (zero; suc)
 open import Agda.Builtin.Int using (pos; negsuc)
+open import Haskell.Prim.Tuple using (_↔_)
 open import Haskell.Prim using (⊥)
 
 open import Tool.Relation

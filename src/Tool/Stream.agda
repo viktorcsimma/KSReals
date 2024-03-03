@@ -29,8 +29,9 @@ record Stream {i}(a : Set i) : Set i where
   coinductive
   constructor mkStream
   field
-    streamHead : a
-    streamTail : Stream a
+    head : a
+    tail : Stream a
+open Stream
 
 {-# FOREIGN AGDA2HS
 -- Here, let's translate it to builtin lists
@@ -41,11 +42,6 @@ type Stream a = [] a
 mkStream :: a -> Stream a -> Stream a
 mkStream = (:)
 #-}
-
-head : ∀{i}{a : Set i} -> Stream a -> a
-head = Stream.streamHead
-tail : ∀{i}{a : Set i} -> Stream a -> Stream a
-tail = Stream.streamTail
 
 {-# FOREIGN AGDA2HS
 head :: Stream a -> a
@@ -59,8 +55,8 @@ tail = Prelude.tail
 -- and a function returning the next seed.
 coiteStream : ∀{i j}{a : Set i}{b : Set j}
                 -> (a -> b) -> (a -> a) -> a -> Stream b
-Stream.streamHead (coiteStream f g s) = f s
-Stream.streamTail (coiteStream f g s) = coiteStream f g (g s)
+Stream.head (coiteStream f g s) = f s
+Stream.tail (coiteStream f g s) = coiteStream f g (g s)
 {-# FOREIGN AGDA2HS
 coiteStream :: (a -> b) -> (a -> a) -> a -> Stream b
 coiteStream f g s = f s : coiteStream f g (g s)

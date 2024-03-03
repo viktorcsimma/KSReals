@@ -9,7 +9,7 @@ open import Agda.Builtin.Char
 open import Agda.Builtin.Nat hiding (_==_)
 open import Agda.Builtin.Int
 open import Agda.Builtin.List
-open import Haskell.Prim.Char
+open import Haskell.Data.Char
 open import Haskell.Prim.Maybe
 open import Haskell.Prim.List
 open import Haskell.Prim.String
@@ -19,7 +19,7 @@ open import Haskell.Prim.Eq
 open import Haskell.Prim.Foldable
 open import Haskell.Prim.Functor
 open import Haskell.Prim.Applicative
-open import Haskell.Control.Alternative
+open import Haskell.Control.Applicative
 open import Haskell.Prim.Monad
 open Do
 import Haskell.Prim.Int

@@ -47,6 +47,11 @@ open import Function.SquareRoot
 open import Shell.Value
 open import Shell.Exp
 
+-- The foreign Haskell code depends on them;
+-- this helps agda2hs know they also need to be compiled.
+import Shell.Statement
+import Shell.Parser
+
 {-# FOREIGN AGDA2HS
 import Control.Monad (foldM)
 import qualified Data.Map as Map
