@@ -3,8 +3,8 @@
 
 ## Purpose
 
-The goal of this library is to create an Agda implementation
-of exact real arithmetic described by Krebbers and Spitters in 2013.
+The goal of this library is to create an Agda implementation of exact real arithmetic
+described by Krebbers and Spitters in 2013.
 The library discussed is based on their mathematical foundations
 and the concepts of the [CoRN](https://github.com/coq-community/corn/) analysis library
 (which has been written in Coq).
