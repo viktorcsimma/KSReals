@@ -18,3 +18,6 @@
 /stub/
 /AcornShell
 /libAcorn.a
+
+# Cabal-generated files
+/dist-newstyle/
