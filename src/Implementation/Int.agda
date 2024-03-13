@@ -170,7 +170,8 @@ instance
   (decSetoidInt DecSetoid.≃# pos n) (pos n₁)       = n Agda.Builtin.Nat.== n₁
   (decSetoidInt DecSetoid.≃# negsuc n) (negsuc n₁) = n Agda.Builtin.Nat.== n₁
   (decSetoidInt DecSetoid.≃# _) _                  = false
-  DecSetoid.≃#-correct decSetoidInt (pos n) (pos n₁) = cheat
+  DecSetoid.≃#-correct decSetoidInt (pos n) (pos n₁) = (λ proof -> cong pos (fst (≃#-correct n n₁) proof)) ,
+                                                       λ proof -> snd (≃#-correct n n₁) (cong (λ {(pos n) -> n; (negsuc n) -> n}) proof)
   DecSetoid.≃#-correct decSetoidInt (pos n) (negsuc n₁) = (λ ()) , λ ()
   DecSetoid.≃#-correct decSetoidInt (negsuc n) (pos n₁) = (λ ()) , λ ()
   DecSetoid.≃#-correct decSetoidInt (negsuc n) (negsuc n₁) = cheat
