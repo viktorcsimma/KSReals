@@ -1,39 +1,7 @@
 cmake_minimum_required(VERSION 3.9)
 
-# For setting up agda2hs.
-set(CMAKE_MODULE_PATH CMakeModulePath)
-configure_file(CMakeModulePath/CMakeAgdaCompiler.cmake.in
-               CMakeAgdaCompiler.cmake)
-set(CMAKE_Agda_COMPILER /home/csimma/.cabal/bin/agda2hs)
-set(CMAKE_Agda_COMPILER_ENV_VAR "")
-set(CMAKE_Agda_SOURCE_FILE_EXTENSIONS agda)
-
 # the language is given so that GNUInstallDirs knows where to install
 project(Acorn LANGUAGES C)
-
-#add_custom_command(OUTPUT hs/All.hs
-#  COMMAND agda2hs -o hs src/All.agda
-#)
-
-#add_custom_command(OUTPUT obj/All.o
-#  COMMAND ghc --make -ihs/ -odir obj -hidir hi -stubdir stub hs/All.hs
-#  MAIN_DEPENDENCY hs/All.hs
-#)
-
-#add_library(Acorn obj/All.o)
-
-#set_target_properties(Acorn PROPERTIES
-#  LINKER_LANGUAGE C
-#)
-
-#add_subdirectory(obj)
-
-
-
-#add_library(Acorn)
-#add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/src)
-
-set (CABAL_BUILD_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cabalbuild/build/x86_64-linux/ghc-9.2.8/acorn-0.1/build)
 
 add_custom_command(OUTPUT hs
   COMMAND agda2hs -o ${CMAKE_CURRENT_SOURCE_DIR}/hs ${CMAKE_CURRENT_SOURCE_DIR}/src/All.agda
