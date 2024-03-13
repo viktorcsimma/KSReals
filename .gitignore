@@ -1,11 +1,20 @@
 *~
-*.agdai
-MAlonzo/**
-*.hs
-*.hi
-*.o
-*.prof
-Main
-a.out
-*_stub.h
+
+# Agda object files
+/_build
+
+# CMake-generated files
+/Makefile
+/CMakeAgdaCompiler.cmake
+/CMakeCache.txt
+/CMakeFiles/
+/cmake_install.cmake
+/install_manifest.txt
+
+# CMake output
+/hs/
+/hi/
+/obj/
+/stub/
 /AcornShell
+/libAcorn.a
