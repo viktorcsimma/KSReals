@@ -1,15 +1,7 @@
 -- A main program for a simple interpreter.
-{-# OPTIONS --erasure --guardedness #-}
-
+-- This is needed to be written in Haskell;
+-- otherwise, Cabal does not accept it.
 module Main where
-
--- We put the shell modules here too
--- so that they get compiled by agda2hs.
-
-import Shell.CalcState
-import Shell.Interaction
-
-{-# FOREIGN AGDA2HS
 
 import Data.Text (unpack, strip, pack)
 import System.IO
@@ -38,4 +30,3 @@ prompt calcState = do
     putStrLn answer
     prompt calcState
 
-#-}
