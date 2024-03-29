@@ -270,7 +270,7 @@ chainl1 {a} v op = v >>= parseLeft v op
 -- These also consume whitespaces!
 
 pBool : {real : Set} -> Parser (Exp real)
-pBool = BoolLit <$> (true <$ string' "true" <|> false <$ string' "false")
+pBool = BoolLit <$> (true <$ string' "True" <|> false <$ string' "False")
 {-# COMPILE AGDA2HS pBool #-}
 
 -- Contains reserved keywords and function names.
