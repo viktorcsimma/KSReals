@@ -27,6 +27,7 @@ import HaskellInstance.Show
 -- import HaskellInstance.Num
 -- import HaskellInstance.Fractional
 -- import HaskellInstance.Floating
+import HaskellInstance.NFData
 import Algebra.Setoid
 import Algebra.Order
 import Algebra.SemiRing
@@ -79,6 +80,7 @@ import HaskellInstance.Show
 -- import HaskellInstance.Num
 -- import HaskellInstance.Fractional
 -- import HaskellInstance.Floating
+import HaskellInstance.NFData
 import Algebra.Setoid
 import Algebra.Order
 import Algebra.SemiRing
