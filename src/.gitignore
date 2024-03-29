@@ -1,0 +1,9 @@
+Main
+*.hs
+*.o
+*.hi
+*_stub.h
+
+# this is the only one we write directly in Haskell,
+# for the sake of Cabal
+!Main.hs
