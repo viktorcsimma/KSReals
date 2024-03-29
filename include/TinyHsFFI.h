@@ -28,6 +28,9 @@ extern "C" {
 #include "stg/Types.h"
 */
 
+/* for integer types */
+#include <stdint.h>
+
 /* get limits for floating point types */
 #include <float.h>
 
