@@ -3,19 +3,14 @@ cmake_minimum_required(VERSION 3.9)
 # the language is given so that GNUInstallDirs knows where to install
 project(Acorn LANGUAGES C)
 
-add_custom_command(OUTPUT hs
-  COMMAND agda2hs -o ${CMAKE_CURRENT_SOURCE_DIR}/hs ${CMAKE_CURRENT_SOURCE_DIR}/src/All.agda
-  COMMAND ${CMAKE_COMMAND} -E copy
-      ${CMAKE_CURRENT_SOURCE_DIR}/src/Main.hs
-      ${CMAKE_CURRENT_SOURCE_DIR}/hs/Main.hs
-)
+add_library(Acorn src/All.agda)
+add_executable(AcornShell src/All.agda src/Main.hs)
 
-add_library(Acorn hs)
-add_executable(AcornShell hs)
-
-# "Linking" will consist of compiling things with ghc.
+# "Linking" will be the actual compilation (both with agda2hs and ghc).
 # This way, we ensure that there are no additional files and need to copy
-# as it was when doing Haskell compilation in `add_custom_command` directives.
+# as it was when doing Haskell compilation in `add_custom_command` directives;
+# still the Haskell files get updated if the Agda sources are modified.
+# (agda2hs will manage what to update.)
 # And when running `sudo make install` after building,
 # root won't need access to ghc.
 set_target_properties(Acorn PROPERTIES
@@ -24,8 +19,15 @@ set_target_properties(Acorn PROPERTIES
 set_target_properties(AcornShell PROPERTIES
   LINKER_LANGUAGE Agda
 )
-set(CMAKE_Agda_CREATE_STATIC_LIBRARY "ghc --make -ihs -odir obj -hidir hi -stubdir stub -staticlib -fPIC -o libAcorn.a hs/All.hs")
-set(CMAKE_Agda_LINK_EXECUTABLE "ghc --make -ihs -odir obj -hidir hi -stubdir stub -o AcornShell hs/Main.hs")
+# The library needs a -threaded option so as to be able to interrupt a thread from another by a foreign call.
+set(CMAKE_Agda_CREATE_STATIC_LIBRARY
+      "agda2hs src/All.agda"
+      "ghc -threaded --make -isrc -staticlib -fPIC -o libAcorn.a src/All.hs"
+)
+set(CMAKE_Agda_LINK_EXECUTABLE
+      "agda2hs src/All.agda"
+      "ghc --make -isrc -o AcornShell src/Main.hs"
+)
 
 # preparing the library to be used by other projects
 # make cache variables for install destinations
