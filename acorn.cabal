@@ -42,7 +42,8 @@ library
   build-depends:       base     >= 4.13    && < 4.20,
                        containers,
                        text,
-                       deepseq >= 1.4
+                       deepseq >= 1.4,
+                       unix >= 2.8
   hs-source-dirs:      src
   autogen-modules:     Operator.Abs,
                        Operator.Pow,
@@ -123,6 +124,9 @@ library
                        Function.Trigonometric,
                        All
   default-language:    GHC2021
+  -- for interrupting the calculation thread
+  -- with a foreign call
+  ghc-options:         -threaded
 
 executable AcornShell
   hs-source-dirs:      src
@@ -135,5 +139,9 @@ executable AcornShell
                        containers,
                        text,
                        deepseq >= 1.4,
+                       unix >= 2.8,
                        acorn
   default-language:    GHC2021
+  -- for interrupting the calculation thread
+  -- with a foreign call
+  ghc-options:         -threaded
