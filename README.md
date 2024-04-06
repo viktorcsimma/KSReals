@@ -32,21 +32,72 @@ The project has three outputs:
 
 ## Installation
 
-First, you will need agda2hs.
+### Dependencies
+
+#### zlib
+
+You will need zlib1 to be able to install agda2hs
+(see the [Agda documentation](https://agda.readthedocs.io/en/v2.5.4.1/getting-started/prerequisites.html)).
+Otherwise, you will get an error message saying that zlib1 is missing
+(well into the installation process).
+
+On Windows, zlib1.dll can be installed this way:
+- Install GHC through ghcup (you should probably do this anyway).
+- Open the MinGW64 binary bundled with it (usually at `C:\ghcup\msys64\mingw64.exe`).
+- In the shell appearing, type `pacman -S mingw-w64-x86_64-zlib`; this will install the zlib MinGW package.
+- Now you will have `zlib1.dll` under `C:\ghcup\msys64\mingw64\bin`.
+- Copy it into System32.
+On Ubuntu/Debian; it should suffice to say `sudo apt install zlib1g-dev libncurses5-dev`.
+
+#### agda2hs
+
+Of course, you will need agda2hs.
 Acorn does not get compiled with the vanilla version;
 _you need a modified one_.
 That is [commit a3c83ad](https://github.com/viktorcsimma/agda2hs/commit/a3c83ad3be876ce0c7aa31157f3107843bf2f465) on my fork.
 (But hopefully, these changes will get merged soon.)
 Clone it, check out the commit, then run `cabal install`.
+_(If Cabal hangs on "Building Agda-2.x.x...", you can try pressing Control-C;
+once, it magically proceeded with the installation then.)_
 
-### Cabal
+If this is done, add the Cabal binary path
+(usually `~/.cabal/bin/` on Unix and `C:\cabal\bin\` on Windows)
+to the PATH variable
+so that the command interpreter sees and recognises agda2hs.
+
+Lastly, in order to make Agda see the agda2hs standard library,
+add the path to the `agda2hs.agda-lib` file in the project root
+(e.g. `C:\path\to\agda2hs\agda2hs.agda-lib` on Windows)
+to Agda's global library list.
+agda2hs will tell you where it is when you try to run it on `src/All.agda`
+(on Windows, it was `AppData\Roaming\agda\libraries` for me;
+but I had to create the `agda` directory by myself).
+
+### Installation methods
+
+On Windows, **before doing anything**,
+issue a `CHCP 65001` command on the cmd you are working on.
+Otherwise, agda2hs won't be able to write Unicode characters
+into .hs files.
+If you have already run it without the command and it has failed,
+_delete the generated Haskell files_ and only then try again.
+
+For making this changes permanent, see [this tutorial](https://www.scaledeskit.net/post/How-to-set-default-charset-in-Windows-cmd).
+
+#### Cabal (for use with Haskell packages)
 
 Acorn is a full Cabal package.
 When Cabal is run, the program in Setup.hs compiles the Agda sources
 into the `hs` output directory;
 the normal building process begins only then.
 
-### CMake
+#### CMake (for use with C and C++ programs)
+
+Ensure (especially on Windows) you have everything needed in your path:
+- CMake itself;
+- the generator (Make, Ninja or something similar);
+- GHC;
+- a C compiler.
 
 For now, this has only been tested _on Ubuntu 20.04_.
 But hopefully, I will make it work on Windows too.
@@ -55,12 +106,19 @@ For compiling a static library for use in C or C++,
 use CMake:
 
 ```sh
-cmake CMakeLists.txt
-make all
-sudo make install
+cmake -G <your build system> CMakeLists.txt
 ```
 
-The last command installs the library into a specific folder,
+On Unix, Make is the simplest option for the underlying build system;
+on Windows, I use Ninja.
+Run that build system after this.
+
+You might be instructed to install libraries
+("it is a member of the hidden package ...").
+In this case, `cabal install --lib` will help
+(although it's not too elegant).
+
+The install command installs the library into a specific folder,
 where it is globally available for all CMake projects.
 With some strings attached.
 
