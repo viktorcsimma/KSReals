@@ -8,6 +8,6 @@ import Shell.Platform.Win32
 #else
 #if defined(linux_HOST_OS) || defined(darwin_HOST_OS)
 module Shell.Platform (module Shell.Platform.Posix) where
-import Shell.Platform.Win32
+import Shell.Platform.Posix
 #endif
 #endif

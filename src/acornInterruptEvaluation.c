@@ -6,11 +6,13 @@
 #else
 #if defined(__unix__) || defined(__unix) || \
         (defined(__APPLE__) && defined(__MACH__))
-#include <unistd.h>
+#include <semaphore.h>
+#include <stdlib.h>
 #endif
 #endif
 
 // See Acorn.h for description.
+
 #ifdef _WIN32
 void acornInterruptEvaluation() {
   // here, we won't actually use the handle
@@ -24,15 +26,22 @@ void acornInterruptEvaluation() {
   if (! success ) {
     CloseHandle(eventHandle);
     fprintf(stderr, "SetEvent failed (%lu)\n", GetLastError());
-    exit(1);
   }
 }
 #else
 #if defined(__unix__) || defined(__unix) || \
         (defined(__APPLE__) && defined(__MACH__))
 void acornInterruptEvaluation() {
-  fprintf(stderr, "interruptCalculation not yet implemented on Unix\n");
-  exit(1);
+  // opening the already existing semaphore
+  sem_t* semaphore = sem_open("AcornInterruptSemaphore", 0);
+  if (SEM_FAILED == semaphore) {
+    fprintf(stderr, "Could not open semaphore\n");
+  } else {
+    sem_post(semaphore);
+    // and we close it from our side, but do not remove it
+    // (that will be done on the Haskell side)
+    sem_close(semaphore);
+  }
 }
 #endif
 #endif

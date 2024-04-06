@@ -10,6 +10,7 @@
 /CMakeFiles/
 /cmake_install.cmake
 /install_manifest.txt
+/AcornConfig.cmake
 .ninja_deps
 .ninja_log
 build.ninja
