@@ -4,6 +4,7 @@ Main
 *.hi
 *_stub.h
 
-# this is the only one we write directly in Haskell,
-# for the sake of Cabal
+# these ar the ones we write directly in Haskell,
+# for the sake of Cabal or the C preprocessor
 !Main.hs
+!Platform.hs
