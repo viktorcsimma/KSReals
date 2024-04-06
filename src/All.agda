@@ -47,6 +47,10 @@ import Shell.Exp
 import Shell.CalcState
 import Shell.Parser
 import Shell.Value
+-- this does not have a .agda file
+-- import Shell.Platform
+import Shell.Platform.Win32
+import Shell.Platform.Posix
 import Implementation.Decimal
 import Implementation.Int
 import Implementation.Dyadic
@@ -61,6 +65,7 @@ import Function.Trigonometric
 -- And now, we also copy them into the Haskell source;
 -- this way, we can compile everything by compiling All.hs.
 {-# FOREIGN AGDA2HS
+{-# LANGUAGE CPP #-}
 import Operator.ShiftL
 import Operator.Cast
 import Operator.Decidable
@@ -100,6 +105,7 @@ import Shell.Exp
 import Shell.CalcState
 import Shell.Parser
 import Shell.Value
+import Shell.Platform
 import Implementation.Decimal
 import Implementation.Int
 import Implementation.Dyadic

@@ -16,6 +16,7 @@ extra-source-files:  acorn.agda-lib,
                      src/RealTheory/*.agda,
                      src/RealTheory/Instance/*.agda,
                      src/Shell/*.agda,
+                     src/Shell/Platform/*.agda,
                      src/Tool/*.agda
 
 -- Since I use my own agda2hs version,
@@ -42,8 +43,11 @@ library
   build-depends:       base     >= 4.13    && < 4.20,
                        containers,
                        text,
-                       deepseq >= 1.4,
-                       unix >= 2.8
+                       deepseq >= 1.4
+  if os(windows)
+    build-depends:     Win32 >= 2.12
+  elif os(linux) || os(darwin)
+    build-depends:     unix >= 2.8
   hs-source-dirs:      src
   autogen-modules:     Operator.Abs,
                        Operator.Pow,
@@ -73,6 +77,9 @@ library
                        Shell.Parser,
                        Shell.Value,
                        Shell.Interaction,
+                       -- this is written directly in a .hs
+                       -- to be able to use the C preprocessor
+                       -- Shell.Platform,
                        Implementation.Frac,
                        Implementation.Decimal,
                        Implementation.Rational,
@@ -112,6 +119,7 @@ library
                        Shell.Parser,
                        Shell.Value,
                        Shell.Interaction,
+                       Shell.Platform,
                        Implementation.Frac,
                        Implementation.Decimal,
                        Implementation.Rational,
@@ -123,6 +131,12 @@ library
                        Function.SquareRoot,
                        Function.Trigonometric,
                        All
+  if os(windows)
+    autogen-modules:   Shell.Platform.Win32
+    exposed-modules:   Shell.Platform.Win32
+  elif os(linux) || os(darwin)
+    autogen-modules:   Shell.Platform.Posix
+    exposed-modules:   Shell.Platform.Posix
   default-language:    GHC2021
   -- for interrupting the calculation thread
   -- with a foreign call
@@ -139,8 +153,11 @@ executable AcornShell
                        containers,
                        text,
                        deepseq >= 1.4,
-                       unix >= 2.8,
                        acorn
+  if os(windows)
+    build-depends:     Win32 >= 2.12
+  elif os(linux) || os(darwin)
+    build-depends:     unix >= 2.8
   default-language:    GHC2021
   -- for interrupting the calculation thread
   -- with a foreign call

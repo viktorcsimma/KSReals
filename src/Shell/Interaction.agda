@@ -6,8 +6,6 @@
 
 module Shell.Interaction where
 
-{-# FOREIGN AGDA2HS {-# LANGUAGE ScopedTypeVariables #-} #-}
-
 open import Agda.Builtin.Nat using (Nat)
 open import Agda.Builtin.Int using (Int; pos)
 open import Agda.Builtin.FromString
@@ -33,7 +31,7 @@ import HaskellInstance.NFData
 
 {-# FOREIGN AGDA2HS
 
-{-# LANGUAGE ForeignFunctionInterface #-}
+{-# LANGUAGE ForeignFunctionInterface, ScopedTypeVariables #-}
 
 import Prelude hiding (Rational)
 
@@ -49,8 +47,8 @@ import Control.Concurrent (ThreadId, myThreadId, throwTo, forkIO, killThread)
 import Control.Concurrent.MVar
 import Control.Exception
 import Control.DeepSeq
-import System.Posix.Signals
 
+import Shell.Platform
 import Tool.ErasureProduct
 import HaskellInstance.Show
 import Implementation.Dyadic
@@ -105,20 +103,9 @@ showValue (VReal x) prec = show (toDecimal
 -- (that is why this is monadic).
 runShowValueInterruptibly :: (AppRational aq, NFData aq) => Value (C aq) -> Natural -> IO String
 runShowValueInterruptibly value precision = do
-  {-
-  catch
-    (evaluate $ force $ showValue value precision) -- this blocks until the result is available
-    (\(e :: AsyncException) -> return "error: evaluation interrupted.\nCaution: side effects have probably already been executed!")
-  -}
-  mVar <- newEmptyMVar
-  childThreadId <- forkIO (putMVar mVar =<< (evaluate $ force $ showValue value precision))
-  -- TODO: this is quite POSIX-specific;
-  -- we would need a solution for Windows too
-  installHandler
-    sigINT
-    (CatchOnce (killThread childThreadId >> putMVar mVar "error: evaluation interrupted.\nCaution: side effects have probably already been executed!"))
-    Nothing
-  takeMVar mVar
+  runInterruptibly
+     (evaluate $ force $ showValue value precision)
+     "error: evaluation interrupted.\nCaution: side effects have probably already been executed!"
 
 -- Initialises a CalcState
 -- and returns a StablePtr to it.
