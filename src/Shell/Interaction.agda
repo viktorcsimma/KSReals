@@ -65,7 +65,13 @@ import HaskellInstance.NFData
 
 -- Actually, some things can be written in Agda.
 
--- A helper for showValue
+-- The PosRational precision we require
+-- to have approximately n precise digits.
+-- It cannot be guaranteed that these are the correct digits:
+-- imagine a situation where it hangs around 1.5.
+-- Instead, we require an 1/4 * 10⁻ⁿ precision,
+-- which narrows
+-- Also a helper for showValue
 -- (otherwise, Haskell could not swallow `pos`).
 fourtenprec : Nat -> Int
 fourtenprec prec = pos $ 4 * 10 ^ prec

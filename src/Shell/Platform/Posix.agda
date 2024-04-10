@@ -35,7 +35,6 @@ runInterruptibly action resultOnInterrupt = do
 
   watcherThreadId <- forkIO $ do
     -- an auto-reset event
-    putStrLn "Hm"
     semaphore <- semOpen sEMAPHORE_NAME
                          (OpenSemFlags True True)
                          stdFileMode
