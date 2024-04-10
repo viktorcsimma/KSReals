@@ -28,7 +28,7 @@ type Int = Integer
 pos :: Natural -> Integer
 pos = Prelude.fromIntegral
 negsuc :: Natural -> Integer
-negsuc x = Prelude.fromIntegral x - 1
+negsuc x = (- 1) - Prelude.fromIntegral x
 #-}
 
 open import Tool.Cheat
