@@ -20,7 +20,7 @@ open import Agda.Builtin.Unit
 open import Agda.Builtin.Bool
 open import Agda.Builtin.Nat using (Nat; zero; suc)
 open import Agda.Builtin.Int using (Int; pos; negsuc)
-open import Haskell.Prim using (_∘_; id; itsTrue; if_then_else_)
+open import Haskell.Prim using (_∘_; id; IsTrue; itsTrue; if_then_else_)
 open import Haskell.Prim.Either
 
 open import Tool.Cheat
@@ -46,6 +46,7 @@ open import Operator.Shift
 open import Operator.ExactShift
 open import RealTheory.Completion
 open import RealTheory.Interval
+open import Tool.Witness
 
 -- First, the compress function.
 -- This creates a real number equal to the original one,
@@ -113,7 +114,7 @@ PosR x = Σ0 Nat
       -- For technical reasons,
       -- we'll use _<#_ and _≡ true.
       -- This way, we can use witness extraction.
-      (λ n -> posRCrit x n ≡ true) 
+      (λ n -> IsTrue (posRCrit x n))
 
 -- We'll use these later;
 -- that's why we define them so early.
@@ -137,23 +138,6 @@ minR {a} x y = map2 (second :^: WrapMod id cheat) (compress x) (compress y)
       -> a -> UcFun a a
   second x = (λ y -> min x y) :^: WrapMod id cheat
 {-# COMPILE AGDA2HS minR #-}
-
-private
-  -- We'll use this for multiplication;
-  -- but have to define it separately
-  -- because of dirty pattern matchings.
-  recipabs : Rational -> Rational
-  -- ∣x∣⁻¹ if a is not null; otherwise any modulus (let's say one)
-  recipabs (MkFrac (pos zero) den₁ denNotNull₁) = one
-  recipabs (MkFrac (pos (suc n)) den₁ denNotNull₁)
-           = MkFrac (abs den₁) (pos (suc n)) tt
-  recipabs (MkFrac (negsuc n) den₁ denNotNull₁)
-           = MkFrac (abs den₁) (pos (suc n)) tt
-  {-# FOREIGN AGDA2HS
-  recipabs :: Rational -> Rational
-  recipabs (MkFrac 0 _) = MkFrac 1 1
-  recipabs (MkFrac n d) = MkFrac (abs n) (abs d)
-  #-}
 
 instance
   -- We'll use this in NonZero.
@@ -184,16 +168,19 @@ instance
                                   (prefixCon
                                      (λ a -> secondFun a)
                                      (WrapMod (λ ε -> proj₁ ε * recip (cast c) cheat :&: cheat) cheat)) cx
-     -- This simply converts cy to the Σ0 version.
-     (MkC (λ ε -> fun cy ε :&: cheat) cheat)
+     -- This converts max(-c, min(c,y)) to the C Σ0 version.
+     (MkC (λ ε -> fun (maxR (returnC (negate c)) (minR (returnC c) cy)) ε :&: cheat) cheat)
     where
     c : a
     c = abs (fun (compress y) (one :&: cheat)) + one
     @0 I : Interval a
     I = [ negate c , c ]
+    secondMod : a -> PosRational -> PosRational
+    secondMod x ε = if (null ≃# x)
+                    then one :&: cheat -- anything
+                    else proj₁ ε * abs (let ratx = cast x in MkFrac (den ratx) (num ratx) cheat) :&: cheat
     secondFun : (x : a) -> UcFun (Σ0 a (IsIn I)) a
-    secondFun x = prefixCon (λ sy -> x * proj₁ sy) (WrapMod (λ ε -> proj₁ ε * recipabs (cast x)
-                                     :&: cheat) cheat)
+    secondFun x = prefixCon (λ sy -> x * proj₁ sy) (WrapMod (secondMod x) cheat)
   SemiRing.+-proper semiRingReals = cheat
   SemiRing.+-assoc semiRingReals = cheat
   SemiRing.*-proper semiRingReals = cheat
@@ -253,40 +240,11 @@ LtT : ∀ {@0 a : Set} {{@0 ara : AppRational a}}
 LtT x y = PosRT (y + negate x)
 {-# COMPILE AGDA2HS LtT #-}
 
--- Creating a non-erased natural existence proof from an erased one
--- (essentially, calculating a witness)
--- if the property is decidable.
--- This is needed for the inverse.
--- I don't yet know how we could prove the termination of this.
-{-# TERMINATING #-}
-witness : ∀ (p : Nat -> Bool) (@0 erasedProof : Σ0 Nat (λ n -> p n ≡ true))
-                -> Σ0 Nat (λ n -> p n ≡ true)
-witness p (n :&: hyp) = go 1 n
-  where
-  -- Could we use this to prove termination somehow?
-  @0 pred : Nat -> Nat
-  pred zero = zero
-  pred (suc n) = n
-  
-  go : Nat -> @0 Nat -> Σ0 Nat (λ n -> p n ≡ true)
-  go n n0 with p n in eq
-  ... | true = n :&: eq
-  ... | false = go (suc n) (pred n0)
--- Tried it with if-then-else, but then it got stuck at the next one.
-{-# FOREIGN AGDA2HS
--- Since posRCrit already uses shifting,
--- we go here incrementally, too.
--- This way, it remains correct
--- even if there is only a finite amount of good witnesses.
-witness :: (Natural -> Bool) -> Σ0 Natural
-witness p = (:&:) (Prelude.until p (1 +) 1)
-#-}
-
 witnessForPos : ∀ {a : Set} {{ara : AppRational a}}
                      -> (x : C a) -> @0 (PosR x) -> PosRT x
 witnessForPos x hyp = ε :&: cheat
   where
-  natPack : Σ0 Nat (λ n → posRCrit (MkC (fun x) (reg x)) n ≡ true)
+  natPack : Σ0 Nat (λ n → IsTrue (posRCrit (MkC (fun x) (reg x)) n))
   natPack = witness (posRCrit x) hyp
   n : Nat
   n = proj₁ natPack
