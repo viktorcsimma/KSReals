@@ -65,21 +65,22 @@ smallArcTgFracQ : ∀ {a : Set} {{ara : AppRational a}}
 -- The seed is going to be a tuple
 -- containing the index of the step (starting from zero)
 -- and the current value of (-1)^i * x^(2i+1).
-smallArcTgFracQ {a} (x :&: _) = sumAlternatingStream
-                            (coiteStream
+smallArcTgFracQ {a} (x :&: _) =
+                    let xs = coiteStream
                                (λ {(i , pow) -> pow * MkFrac one (cast (pos (suc (2 * i)))) cheat})
                                (λ {(i , pow) -> suc i , negate (x * x * pow)})
-                               (0 , x))
-                               cheat
+                               (0 , x) in
+                    sumAlternatingStream xs
+                               (autoHasThatNearToZero xs cheat :&: cheat)
 {-# COMPILE AGDA2HS smallArcTgFracQ #-}
 
 -- And now a formula for π; using smallArcTgFracQ.
 -- See Krebbers and Spitters.
 pi : ∀ {a : Set} {{ara : AppRational a}} -> C a
-pi = returnC (cast (pos 176)) * compress (smallArcTgFracQ (MkFrac one (cast (pos 57)) cheat :&: cheat))
-    + (returnC (cast (pos 28)) * compress (smallArcTgFracQ (MkFrac one (cast (pos 239)) cheat :&: cheat)))
-    - (returnC (cast (pos 48)) * compress (smallArcTgFracQ (MkFrac one (cast (pos 682)) cheat :&: cheat)))
-    + returnC (cast (pos 96)) * compress (smallArcTgFracQ (MkFrac one (cast (pos 12943)) cheat :&: cheat))
+pi = multByAQ (cast (pos 176)) (compress (smallArcTgFracQ (MkFrac one (cast (pos 57)) cheat :&: cheat)))
+     + multByAQ (cast (pos 28)) (compress (smallArcTgFracQ (MkFrac one (cast (pos 239)) cheat :&: cheat)))
+     - multByAQ (cast (pos 48)) (compress (smallArcTgFracQ (MkFrac one (cast (pos 682)) cheat :&: cheat)))
+     + multByAQ (cast (pos 96)) (compress (smallArcTgFracQ (MkFrac one (cast (pos 12943)) cheat :&: cheat)))
 {-# COMPILE AGDA2HS pi #-}
 
 {-
@@ -102,13 +103,13 @@ smallSinFracQ : ∀ {a : Set} {{ara : AppRational a}}
 -- containing the index of the step (starting from one)
 -- and the value of (-1)^(i-1) * x^(2i-1) / (2i-1)!
 -- (so the previous member of the sum).
-smallSinFracQ {a} (x :&: _) = sumAlternatingStream
-                            (coiteStream
+smallSinFracQ {a} (x :&: _) =
+                    let xs = coiteStream
                                snd
                                (λ {(i , fra) -> suc i ,
                                                 negate (MkFrac one (cast (pos (2 * i * suc (2 * i)))) cheat) * x * x * fra})
-                               (1 , x))
-                               cheat
+                               (1 , x) in
+                    sumAlternatingStream xs (autoHasThatNearToZero xs cheat :&: cheat)
 {-# COMPILE AGDA2HS smallSinFracQ #-}
 
 -- Now for any Frac a.
