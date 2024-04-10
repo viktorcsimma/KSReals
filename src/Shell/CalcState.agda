@@ -147,7 +147,13 @@ evalExp' vars hist (Sin exp) = do
     (VInt n)  -> Right $ VReal $ sinQ (cast n)
     (VRat (MkFrac k d dNotNull))  -> Right $ VReal $ sinFracQ (MkFrac (cast k) (cast d) cheat)
     (VReal x) -> Right $ VReal $ sin x
-evalExp' vars hist (Cos exp) = Left "\"cos\" not implemented yet"
+evalExp' vars hist (Cos exp) = do
+  val <- evalExp' vars hist exp
+  case val of λ where
+    (VBool _) -> Left "function \"cos\" is not applicable to booleans"
+    (VInt n)  -> Right $ VReal $ cosQ (cast n)
+    (VRat (MkFrac k d dNotNull))  -> Right $ VReal $ cosFracQ (MkFrac (cast k) (cast d) cheat)
+    (VReal x) -> Right $ VReal $ cos x
 evalExp' vars hist (Sqrt exp) = do
   val <- evalExp' vars hist exp
   case val of λ where
@@ -374,8 +380,8 @@ execStatement calcState Empty = do
     Just ans -> return $ Right ans
 execStatement calcState (Eval exp) = do
   val <- evalExp calcState exp
-  case val of
-    Left err -> return $ Left ("error while evaluating expression: " ++ err)
+  case val of                -- v "error while executing statement; "
+    Left err -> return $ Left ("while evaluating expression: " ++ err)
     Right val -> do
       let varsRef = variables calcState; histRef = history calcState
       vars <- readIORef varsRef

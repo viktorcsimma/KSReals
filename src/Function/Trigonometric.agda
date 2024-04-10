@@ -137,11 +137,24 @@ sinFracQ x =    -- K&S recommend 2^(-75) as an upper bound for high-precision ca
                  (compress s)
 {-# COMPILE AGDA2HS sinFracQ #-}
 
+-- We define cos in terms of sin:
+-- cos x = 1 - 2 * (sin x/2)².
+cosFracQ : ∀ {a : Set} {{ara : AppRational a}}
+             -> Frac a {{Ring.super ring}}
+             -> C a
+cosFracQ x = one - multByAQ (cast 2) (sinFracQ (MkFrac (shift (num x) (negsuc 0)) (den x) (denNotNull x)) ^ the Nat 2)
+{-# COMPILE AGDA2HS cosFracQ #-}
+
 -- Now specially for simply a.
 sinQ : ∀ {a : Set} {{ara : AppRational a}}
              -> a -> C a
 sinQ x = sinFracQ (MkFrac x one cheat)
 {-# COMPILE AGDA2HS sinQ #-}
+
+cosQ : ∀ {a : Set} {{ara : AppRational a}}
+             -> a -> C a
+cosQ x = one - multByAQ (cast 2) (sinQ (shift x (negsuc 0)) ^ the Nat 2)
+{-# COMPILE AGDA2HS cosQ #-}
 
 -- Here, the modulus of continuity is simply id.
 sinQUc : ∀ {a : Set} {{ara : AppRational a}}
@@ -154,3 +167,8 @@ sin : ∀ {a : Set} {{ara : AppRational a}}
          -> C a -> C a
 sin x = proj₁' (bindC sinQUc) (compress x)
 {-# COMPILE AGDA2HS sin #-}
+
+cos : ∀ {a : Set} {{ara : AppRational a}}
+         -> C a -> C a
+cos x = one - multByAQ (cast 2) (sin (shift x (negsuc 0)) ^ the Nat 2)
+{-# COMPILE AGDA2HS cos #-}

@@ -162,8 +162,8 @@ execCommand' calcState command prec
       Left err -> return $ "error while parsing statement: " ++ err
       Right (stmt, _) -> do
         result <- execStatement calcState stmt
-        case result of {
-          Left err -> return ("error while executing statement: " ++ err);
+        case result of {    -- v continues with sth like "while evaluating expression: ..."
+          Left err -> return ("error while executing statement; " ++ err);
           Right val -> runShowValueInterruptibly val (fromIntegral prec)}
 
 -- Returns a new approximation of the result of the last successful command

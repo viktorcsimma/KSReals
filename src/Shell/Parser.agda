@@ -302,14 +302,21 @@ pRealConst = (Pi <$ pKeyword' "pi") <|>
              (E  <$ pKeyword' "e")
 {-# COMPILE AGDA2HS pRealConst #-}
 
+-- Parse a history reference in the form of "history[n]".
+-- E.g. history[1] will be the result of the last but one statement.
+pHistory' : {real : Set} -> Parser (Exp real)
+pHistory' = History <$> (pKeyword' "history" *> char' '[' *> natural' <* char' ']')
+{-# COMPILE AGDA2HS pHistory' #-}
+
 -- pAtom: Parsing anything that is considered to be atomic:
--- an integer literal, a boolean literal, a variable name
+-- an integer literal, a boolean literal, a variable name,
+-- a history item
 -- or an expression between parantheses.
 -- Here, we actually only parse integers without a negation sign,
 -- as that is going to be treated as a prefix operator.
 {-# TERMINATING #-}
 pAtom pExp : {real : Set} -> Parser (Exp real)
-pAtom = ((IntLit ∘ pos) <$>  natural') <|> pBool <|> pRealConst <|> (Var <$> pIdent') <|> between (char' '(') pExp (char' ')')
+pAtom = ((IntLit ∘ pos) <$>  natural') <|> pBool <|> pRealConst <|> pHistory' <|> (Var <$> pIdent') <|> between (char' '(') pExp (char' ')')
 {-# COMPILE AGDA2HS pAtom #-}
 
 -- negation
@@ -372,12 +379,6 @@ pOr = chainl1 pAnd (Or <$ string' "||")
 -- pExp : {real : Set} -> Parser (Exp real)
 pExp = pOr
 {-# COMPILE AGDA2HS pExp #-}
-
--- Parse a history reference in the form of "history[n]".
--- E.g. history[1] will be the result of the last but one statement.
-pHistory' : {real : Set} -> Parser (Exp real)
-pHistory' = History <$> (pKeyword' "history" *> char' '[' *> natural' <* char' ']')
-{-# COMPILE AGDA2HS pHistory' #-}
 
 {-# TERMINATING #-}
 pStatement : {real : Set} -> Parser (Statement real)
