@@ -25,7 +25,7 @@ open import Agda.Builtin.Equality
 open import Agda.Builtin.Nat using (Nat; zero; suc)
 open import Agda.Builtin.Int using (Int; pos; negsuc)
 open import Haskell.Prim.Tuple
-open import Haskell.Prim using (id; const)
+open import Haskell.Prim using (id; const; IsTrue)
 
 open import Tool.Cheat
 
@@ -69,6 +69,9 @@ record AppRational (aq : Set) : Set₁ where
     -- it is not necessary for the conditions,
     -- but needed later.
     overlap {{prelengthAq}} : PrelengthSpace aq
+    -- We require the metric to be based on ∣x-y∣.
+    @0 metricInduced : ∀ (ε : PosRational) (x y : aq)
+        -> ball ε x y ↔ IsTrue (cast (abs (x - y)) ≤# proj₁ ε )
 
     -- Here, cast is a conversion to the "original" rationals.
     @0 aqToQOrderEmbed : OrderEmbedding (cast {aq} {Rational})
@@ -133,6 +136,7 @@ instance
   AppRational.natPow appRationalRational = natPowFrac
   AppRational.castAqRational appRationalRational = castSame
   AppRational.castIntAq appRationalRational = castFrac
+  AppRational.metricInduced appRationalRational = cheat
   AppRational.aqToQOrderEmbed appRationalRational = cheat
   AppRational.aqToQStrictOrderEmbed appRationalRational = cheat
   AppRational.aqToQSemiRingMorphism appRationalRational = cheat
@@ -160,6 +164,7 @@ instance
   AppRational.castAqRational appRationalDyadic = castDyadicRational
   AppRational.castIntAq appRationalDyadic = castIntDyadic
   AppRational.prelengthAq appRationalDyadic = prelengthSpaceDyadic
+  AppRational.metricInduced appRationalDyadic = cheat
 
 
   AppRational.aqToQOrderEmbed appRationalDyadic = ((λ _ _ eq -> eq) , λ _ _ le -> le) , ((λ _ _ eq -> eq) , λ _ _ le -> le)

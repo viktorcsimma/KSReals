@@ -57,9 +57,18 @@ smallExpQ : ∀ {a : Set} {{ara : AppRational a}}
          -> Σ0 a (IsIn [ negate one , null ]) -> C a
 -- The seed is going to be a Nat × Frac a tuple,
 -- containing the index of the step (starting from 1) and the previous fraction.
-smallExpQ (x :&: _) = sumAlternatingStream
-                        (coiteStream snd (λ {(n , fra) -> suc n , MkFrac (num fra * x) (den fra * cast (pos n)) cheat}) (1 , one))
-                        cheat
+smallExpQ (x :&: _) = let xs = (coiteStream snd (λ {(n , fra) -> suc n , MkFrac (num fra * x) (den fra * cast (pos n)) cheat}) (1 , one)) in
+                       sumAlternatingStream xs
+                        -- the index for K&S 5.1:
+                        {-
+                          ∣xᵏ/k!∣ + ε/2k + ε/2k ≤ ε/2
+                          ∣xᵏ/k!∣ + ε/k ≤ ε/2
+                          huh; that won't be easy
+                          but if we have a proof with a rough overapproximation,
+                          we can put it into autoHasThatNearToZero
+                          and now, we can cheat it away
+                        -}
+                        (autoHasThatNearToZero xs cheat :&: cheat)
 {-# COMPILE AGDA2HS smallExpQ #-}
 
 -- From Krebbers and Spitters:

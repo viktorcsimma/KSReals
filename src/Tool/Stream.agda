@@ -16,8 +16,8 @@ open import Haskell.Prim using (if_then_else_)
 open import Tool.ErasureProduct
 
 {-# FOREIGN AGDA2HS
-import Prelude hiding (head, tail)
-import qualified Prelude (head, tail)
+import Prelude hiding (head, tail, map)
+import qualified Prelude (head, tail, map)
 
 import Tool.ErasureProduct
 #-}
@@ -89,6 +89,9 @@ takeStream n xs = take (fromIntegral n) xs
 -- Needs a proof that there _is_ such an element.
 -- (Maybe the proof's erased Nat could be used
 -- for convincing the termination checker.)
+-- Since we have changed the alternating series logic,
+-- we don't really use this.
+-- It might even be faulty.
 {-# TERMINATING #-}
 countWhile : ∀{i}{a : Set i}
                      -> (p : Nat -> a -> Bool)
@@ -109,19 +112,25 @@ countWhile p xs hyp = go p xs hyp 0
                   else k :&: cheat
 {-# COMPILE AGDA2HS countWhile #-}
 
-{-
--- Foldr'ing elements
--- until there is one found
--- for which the predicate is false.
--- Needs a proof that there _is_ such an element.
--- (foldr is lazy while foldl is not.)
-{-# TERMINATING #-}
-foldrWhile : ∀{i j}{a : Set i}{b : Set j}
-                     -> (p : a -> Bool)
-                     -> (a -> b -> b) -> b -> (xs : Stream a)
-                     -> @0 (Σ0 Nat (λ n -> p (index xs n) ≡ false))
-                     -> b
-foldrWhile p f b xs hyp = if (p (head xs))
-                                then f (head xs) (foldrWhile p f b (tail xs) cheat) 
-                                else b
--}
+-- Foldr'-ing the first n elements.
+partialFoldr : ∀{i j}{a : Set i}{b : Set j}
+                       -> (a -> b -> b)
+                       -> b
+                       -> Stream a
+                       -> Nat
+                       -> b
+partialFoldr _ b _  zero = b
+partialFoldr f b xs (suc i) = f (head xs) (partialFoldr f b (tail xs) i)
+{-# FOREIGN AGDA2HS
+partialFoldr :: (a -> b -> b) -> b -> Stream a -> Natural -> b
+partialFoldr f b xs n = foldr f b $ take (fromIntegral n) xs
+#-}
+
+-- Map.
+map : ∀{i j}{a : Set i}{b : Set j} -> (a -> b) -> Stream a -> Stream b
+head (map f xs) = f (head xs)
+tail (map f xs) = map f (tail xs)
+{-# FOREIGN AGDA2HS
+map :: (a -> b) -> Stream a -> Stream b
+map = Prelude.map
+#-}

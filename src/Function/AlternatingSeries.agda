@@ -8,16 +8,17 @@ module Function.AlternatingSeries where
 
 open import Tool.Cheat
 
+open import Agda.Builtin.Bool
 open import Agda.Builtin.Nat using (Nat; zero; suc)
 open import Agda.Builtin.Int
 open import Agda.Builtin.Unit
 open import Haskell.Prim.Foldable using (foldr)
-open import Haskell.Prim.List hiding (tail)
 open import Haskell.Prim.Tuple
-open import Haskell.Prim using (itsTrue)
+open import Haskell.Prim using (IsTrue; itsTrue)
 
 open import Algebra.Order
 open import Algebra.SemiRing
+open import Algebra.Ring
 open import Implementation.Nat using (natLog2Floor)
 open import Implementation.Int
 open import Implementation.Frac
@@ -28,11 +29,13 @@ open import Operator.Decidable
 open import Operator.Shift
 open import RealTheory.AppRational
 open import RealTheory.Completion
+open import RealTheory.MetricSpace
 open import Tool.ErasureProduct
 open import Tool.Stream
+open import Tool.Witness
 
 {-# FOREIGN AGDA2HS
-import Prelude (Integer, map)
+import Prelude (Bool, Integer, error, otherwise)
 import Implementation.Nat
 import Implementation.Int
 #-}
@@ -55,123 +58,82 @@ precision 2^k such as n*2^k < epsilon/2.
 -- This way, we can have only one stream and ensure
 -- the denominator is not zero.
 
--- Takes the parameters coiteStream takes
--- (a is the type of seeds).
--- See the conditions of O'Connor's Theorem 33.
-@0 IsAlternating : {a : Set} {{ara : AppRational a}} -> Stream (Frac a) -> Set
-IsAlternating xs = (∀ (i : Nat) -> abs (index xs (suc i)) < abs (index xs i))
-                   × ((∀ (i : Nat) -> index xs i * index xs (suc i) < null)    -- is alternating
-                   × (∀ (ε : PosRational) -> Σ0 Nat (λ n -> let fra = index xs n in
-                                                      cast (num (abs fra)) ≤ cast (den (abs fra)) * (proj₁ ε))))
-                                                        -- this ensures the limit is 0;
-                                                        -- we only need one because
-                                                        -- afterwards it's strictly decreasing
+-- We define this that way because
+-- we will need exactly this function
+-- in sumAlternatingStream.
+-- See 5.1 at K&S and the version below it.
+-- This also reduces complexity
+-- but requires the user to give a correct function
+-- for every stream;
+-- unerasably.
+thatNearToZero : {a : Set} {{ara : AppRational a}} -> Frac a -> PosRational -> Nat -> Bool
+thatNearToZero xk ε k = let prec = ratLog2Floor (proj₁ ε) {proj₂ ε} + negsuc k in
+                          -- We put it with IsTrue;
+                          -- we already require for an AppRational type
+                          -- that this should be equivalent to ball.
+                          cast (abs (appDiv (num xk) (den xk) (denNotNull xk)
+                                             prec)
+                                + shift one prec)
+                          ≤# proj₁ (halvePos ε)
+                          {-
+                          ball (halvePos ε)
+                               (appDiv (num xk) (den xk) (denNotNull xk)
+                                     prec
+                                 + shift one prec)
+                               null)
+                          -}
+{-# COMPILE AGDA2HS thatNearToZero #-}
+HasThatNearToZero : {a : Set} {{ara : AppRational a}} -> Stream (Frac a) -> Set
+HasThatNearToZero xs = ∀ (ε : PosRational) -> Σ0 Nat (λ k -> IsTrue (thatNearToZero (index xs k) ε k))
+{-# COMPILE AGDA2HS HasThatNearToZero #-}
+-- TODO: a non-erased proof that all series converging to zero have this property.
 
-sumAlternatingStream : {a : Set} {{ara : AppRational a}} ->
-                         (xs : Stream (Frac a)) -> @0 (IsAlternating xs) -> C a
-sumAlternatingStream {a} xs hyp = MkC (rx xs) cheat
+-- Automatically calculates the least eligible index for a series
+-- if we already have an erased proof of the fact that such an index exists.
+-- Uses the witness function.
+-- Good for cases where you can prove the existence but with rough overapproximations.
+-- (And for cheating away the proofs...)
+autoHasThatNearToZero : {a : Set} {{ara : AppRational a}} (xs : Stream (Frac a)) -> @0 (HasThatNearToZero xs) -> HasThatNearToZero xs
+autoHasThatNearToZero xs hyp ε = witness (λ k -> thatNearToZero (index xs k) ε k) (hyp ε)
+{-# FOREIGN AGDA2HS
+-- The Agda definition would be quite slow:
+-- it would calculate index xs 0, then index xs 1 seperately, then index xs 2...
+-- so it would be O(n^2).
+-- Instead, we do it with the tools of Prelude:
+autoHasThatNearToZero :: AppRational a => Stream (Frac a) -> HasThatNearToZero xs
+autoHasThatNearToZero xs ε = go xs ε 0
   where
-  -- We have to specify `a` again;
-  -- otherwise, Haskell believes it's a different type.
-  rx : {a : Set} {{ara : AppRational a}} -> Stream (Frac a) -> PosRational -> a
-  rx {a} xs ε = foldr _+_ null
-                ( map (λ fa -> appDiv (num fa) (den fa) (denNotNull fa) divPrec)
-                ( takeStream n xs))
-    where
-    logFloorε : Int
-    logFloorε = ratLog2Floor (proj₁ ε) {proj₂ ε}
-    -- See ARAlternatingSum.v.
-    -- shift one logFloorε is an underestimate of ε.
-    -- shift one (logFloorε - 1) is an underestimate of ε/2.
-    -- And we need not perform the approximate division,
-    -- since we can multiply the denominator
-    -- with shift one (logFloorε - 1).
-    -- And actually, this is equivalent
-    -- to simply shifting the denominator.
-    n : Nat
-    n = proj₁ (countWhile
-                 (λ _ fra ->
-                   shift (abs (den fra)) (logFloorε + negsuc 0)
-                     ≤# abs (num fra))
-                 xs cheat)
+  go :: AppRational a => Stream (Frac a) -> PosRational -> Natural -> Σ0 Natural
+  go [] _ _ = error "Stream cannot be finite"
+  go (x:xs) ε k
+    | thatNearToZero x ε k = (:&:) k
+    | otherwise = go xs ε (1+k)
+#-}
 
-    -- First we have to count them to calculate the required precision;
-    -- then we have to iterate again, execute the divisions and sum the results.
+-- we will need a tuple here
+IsAlternating : {a : Set} {{ara : AppRational a}} -> Stream (Frac a) -> Set
+IsAlternating xs = Tuple0 (HasThatNearToZero xs)
+                   ( (∀ (i : Nat) -> abs (index xs (suc i)) < abs (index xs i))  -- decreasing
+                   × (∀ (i : Nat) -> index xs i * index xs (suc i) < null) )     -- alternating
+{-# COMPILE AGDA2HS IsAlternating #-}
 
-    -- See Krebbers 5.1.
-    -- Here is the plan.
-    
-    -- ε*31/16 is quick to calculate. (It must be something a bit smaller than 2ε.)
-    -- Let underApp := appDiv (num (ε*15/16)) (div (ε*15/16)) (ratLog2Floor ε/32).
-    -- Then:
-    -- ε*29/32 ≤ underApp ≤ ε*31/32
-    -- 0 < ε*29/64 ≤ underApp/2 ≤ ε*31/64 < ε/2
-      -- Maybe this could be made even more precise.
-    -- We then write an efficient comparison for dyadics.
-    -- And then, we can use underApp/2 as the upper bound.
-    -- One more thing: what about ε/2k?
-    -- Its logarithm is largely OK; that is quick to compute.
-    
-    -- Then, an overapproximation of ε/2k.
-    -- Let overApp = appDiv (num (ε*17/16)) (div (ε*17/16)) (ratLog2Floor ε/32)
-    -- Then:
-    -- ε*33/32 ≤ overApp ≤ ε*35/32
-    -- ε/2 < ε*33/64 ≤ overApp/2 ≤ ε*35/64
-    -- ε/2k ≤ overApp/2k = overApp * 2 ^ (-log₂ k - 1) ≤ overApp * 2 ^ (- natLog2Floor k - 1) =
-    -- = shift overApp (- natLog2Floor k - 1)
-      -- Here, k must not be zero.
-      -- But - natLog2Floor (suc k) ≥ - natLog2Floor k - 1;
-      -- so we can correct it this way.
-    -- Let overAppp2k := shift overApp (- natLog2Floor (suc k)).
-    -- And let appFra := appDiv nₖ dₖ (ratLog2Floor ε/2k).
-      -- Here ratLog2Floor ε/2k ≥ ratLog2Floor ε - 1 - (1 + natLog2Floor k) =
-      -- = ratLog2Floor ε - natLog2Floor k - 2.
-      -- And we can freely put suc k there; we just increase the precision by that.
-    -- Finally:
-    -- |appFra + ε/2k| < ε/2
-    -- it's enough to see that
-    -- |appFra| + ε/2k < ε/2
-    -- |appFra| < ε/2 - ε/2k
-    -- , and it's enough to see that
-    -- |appFra| < underApp/2 - overAppp2k
-    -- |appFra| + overAppp2k < underApp/2
-    -- And now, both sides are dyadics.
-    -- They are both nonnegative, and the left side converges to zero;
-    -- so there will be a k for which the predicate is false.
-    {-
-    logFloorε : Int
-    logFloorε = ratLog2Floor (proj₁ ε) {proj₂ ε}
-    underApp : {a : Set} {{ara : AppRational a}} -> a
-    underApp = let mulε = proj₁ (multPos ε (MkFrac (pos 15) (pos 16) tt :&: itsTrue)) in
-           appDiv (cast (num mulε)) (cast (den mulε)) cheat (logFloorε + (negsuc 4))
-    overApp : {a : Set} {{ara : AppRational a}} -> a
-    overApp = let mulε = proj₁ (multPos ε (MkFrac (pos 17) (pos 16) tt :&: itsTrue)) in
-           appDiv (cast (num mulε)) (cast (den mulε)) cheat (logFloorε + (negsuc 4))
-    n : Nat
-    n = proj₁ (countWhile (λ k fra -> let appFra = appDiv (num fra) (den fra) (denNotNull fra) (logFloorε - pos (natLog2Floor (suc k)) + negsuc 1); overAppp2k = shift overApp (negate (pos (natLog2Floor (suc k))))
-                                      in shift underApp (negsuc 0)
-                                           ≤# abs appFra + overAppp2k)
-                          xs
-                          cheat)
-    -}
-    {-
-    n = proj₁ (countWhile (λ k fra -> proj₁ (halvePos ε) ≤# testBound k fra)
-                          (tail xs) -- we start from one because of the denominator
-                          cheat
-                          1) -- the starting index
-       where
-       εp2k : Nat -> PosRational
-       εp2k k = multPos ε (MkFrac (pos 1) (pos (shiftl k 1)) cheat :&: itsTrue)
-       testBound : {a : Set} {{ara : AppRational a}} -> Nat -> Frac a -> Rational
-       testBound {a} k fra = abs (cast {a} {Rational}
-                                    (appDiv (num fra) (den fra) (denNotNull fra)
-                                       ((pos 1) + (ratLog2Floor (proj₁ (εp2k k)) {proj₂ (εp2k k)})))
-                                  + proj₁ (εp2k k))
-    -}
-    divPrec : Int
-    divPrec = logFloorε + negsuc 0 + negsuc (natLog2Floor (suc n))
-    -- natLog2Floor would round it in the wrong direction
-    -- and suc n is needed for the sake of the logarithm
-    -- divPrec = ratLog2Floor (proj₁ (halvePos ε) * MkFrac (pos 1) (pos (suc n)) tt) {cheat}
+-- The sum of the first n elements of a stream.
+partialSum : ∀{a : Set}{{semiring : SemiRing a}} -> Stream a -> Nat -> a
+partialSum = partialFoldr _+_ null
+{-# COMPILE AGDA2HS partialSum #-}
+
+-- The sum of an infinite alternating series
+-- as a real.
+-- The idea is that at an ε approximation,
+-- we only count until the index
+-- that the function in HasThatNearToZero gives for ε.
+-- See 5.1 at K&S.
+sumAlternatingStream : {a : Set} {{ara : AppRational a}} ->
+                         (xs : Stream (Frac a)) -> IsAlternating xs -> C a
+sumAlternatingStream xs (anyNear :&: (dec , alt)) =
+  MkC
+    (λ ε -> let km1 = proj₁ (anyNear ε); k = suc km1; divPrec = ratLog2Floor (proj₁ ε) {cheat} + negsuc k in
+           partialSum (map (λ {(MkFrac n d dNotNull) -> appDiv n d dNotNull divPrec}) xs) k
+    )
+    cheat
 {-# COMPILE AGDA2HS sumAlternatingStream #-}
-

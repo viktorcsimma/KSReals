@@ -24,10 +24,10 @@ infixr 4 :&:
 ∃0 : ∀ {a b} {A : Set a} → @0 (A → Set b) → Set (a ⊔ b)
 ∃0 = Σ0 _            -- it makes strange things from this...
 
--- doesn't work either... never mind; we don't really use it anyway
-_×0_ : ∀ {a b} (A : Set a) → (@0 B : Set b) → Set (a ⊔ b)
-A ×0 B = Σ0 A (λ _ → B)
-infixr 2 _×0_
+-- it's odd, but that is how it works
+Tuple0 : ∀ {i j} (a : Set i) → (@0 b : Set j) → Set (i ⊔ j)
+Tuple0 a b = Σ0 a (λ _ → b)
+{-# COMPILE AGDA2HS Tuple0 #-}
 
 -- A record type which has both members compiled,
 -- but the argument of the lambda is erased;
