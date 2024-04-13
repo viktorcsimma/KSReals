@@ -7,6 +7,7 @@ module Shell.Platform.Posix where
 {-# FOREIGN AGDA2HS
 
 import Control.Concurrent
+import Control.Exception (try, IOException)
 import System.Posix.Signals
 import System.Posix.Semaphore
 import System.Posix.Files (stdFileMode)
@@ -33,27 +34,38 @@ runInterruptibly action resultOnInterrupt = do
   (mVar :: MVar (Maybe a)) <- newEmptyMVar
   childThreadId <- forkIO (putMVar mVar =<< (Just <$> action))
 
+  -- We create the semaphore here so that
+  -- we can be sure it exists
+  -- and can be accessed by both threads
+  -- (otherwise, the thread creating it could be slower
+  -- then the other one trying to access it).
+  -- But it will be removed by the watcher thread
+  -- as it will use it at last.
+  semaphore <- semOpen sEMAPHORE_NAME
+                       (OpenSemFlags True True)
+                       stdFileMode
+                       0
+
   watcherThreadId <- forkIO $ do
     -- an auto-reset event
     semaphore <- semOpen sEMAPHORE_NAME
-                         (OpenSemFlags True True)
-                         stdFileMode
-                         0
+                         (OpenSemFlags False False)
+                         -- these are ignored
+                         0 0
     -- this only blocks the current thread;
     -- semWait would block the entire runtime
     semThreadWait semaphore
     -- this will do nothing if the MVar has already been filled
     wasEmpty <- tryPutMVar mVar Nothing
     if wasEmpty
-      then killThread childThreadId
-      else return ()
-    -- and finally, we unlock and remove the semaphore
-    semPost semaphore
-    semUnlink sEMAPHORE_NAME
+      then killThread childThreadId >> semUnlink sEMAPHORE_NAME
+      else semUnlink sEMAPHORE_NAME
 
   oldHandler <- installHandler
     sigINT
-    (CatchOnce $ semOpen sEMAPHORE_NAME (OpenSemFlags False False) 0 0 >>= semPost)
+    -- it should not fail if the semaphore does not exist anymore
+    (CatchOnce $
+       ((try :: IO () -> IO (Either IOException ())) $ semOpen sEMAPHORE_NAME (OpenSemFlags False False) 0 0 >>= semPost) >> return ())
     Nothing
 
   maybeResult <- readMVar mVar
@@ -61,11 +73,8 @@ runInterruptibly action resultOnInterrupt = do
   installHandler sigINT oldHandler Nothing
   case maybeResult of
     Just result -> do
-      -- stop the watcher thread by triggering the semaphore
-      semaphore <- semOpen sEMAPHORE_NAME
-                           (OpenSemFlags False False)
-                           -- these are ignored
-                           0 0
+      -- we make the watcher thread end gracefully
+      -- by unlocking the semaphore
       semPost semaphore
       return result
     -- in this case, the watcher thread has already run
