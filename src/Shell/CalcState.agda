@@ -89,7 +89,7 @@ atMaybe (x ∷ xs) n = if (n ≃# 0) then Just x else atMaybe xs (n Agda.Builtin
 -- A helper for conversions.
 multRatReal : {aq : Set} {{araq : AppRational aq}} ->
         Rational -> C aq -> C aq
-multRatReal (MkFrac n d denNotNull) x = multByAQ (cast n) (x * recip (cast n) cheat)
+multRatReal (MkFrac n d denNotNull) x = multByAQ (cast n) (x * recip (cast d) cheat)
 {-# COMPILE AGDA2HS multRatReal #-}
 
 -- Performs logical operations on values.

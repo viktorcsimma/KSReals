@@ -37,9 +37,9 @@ open import Operator.Pow
 -- In a calculator, we'll first convert a Dyadic or Rational
 -- to a Decimal with a given precision.
 showDecimal : Decimal -> String
--- For performance reasons; if n is nonnegative, we don't reverse strings and such.
+-- For performance reasons; if the exponent is nonnegative, we don't reverse strings and such.
 showDecimal (MkDec m (pos n)) = show (m * pos 10 ^ n)
-showDecimal (MkDec m (negsuc n)) = go (suc n) (reverse (show m)) []
+showDecimal (MkDec (pos m) (negsuc n)) = go (suc n) (reverse (show m)) []
   where
   -- The two sides
   -- represent where we are;
@@ -53,11 +53,16 @@ showDecimal (MkDec m (negsuc n)) = go (suc n) (reverse (show m)) []
   go zero left right = reverse left ++ '.' ∷ right
   go (suc n) [] right = go n [] ('0' ∷ right)
   go (suc n) (x ∷ left) right = go n left (x ∷ right)
+-- And we handle negative numbers separately:
+showDecimal (MkDec (negsuc m) (negsuc n)) = '-' ∷ showDecimal (MkDec (pos (suc m)) (negsuc n))
 {-# FOREIGN AGDA2HS
 showDecimal :: Decimal -> String
--- For performance reasons; if n is nonnegative, we don't reverse strings and such.
+-- Here too:
+-- for performance reasons; if the exponent is nonnegative, we don't reverse strings and such.
+-- And we handle negative numbers separately, by adding a '-' to the absolute value.
 showDecimal (MkDec m n)
   | 0 <= n      = show (m * 10 ^ fromIntegral n)
+  | 0 > m       = '-' : showDecimal (MkDec (abs m) n)
   | otherwise   = go (fromIntegral (abs n)) (reverse (show m)) []
     where
     -- The two sides

@@ -6,7 +6,7 @@ module Shell.Parser where
 open import Agda.Builtin.Unit
 open import Agda.Builtin.Bool
 open import Agda.Builtin.Char
-open import Agda.Builtin.Nat hiding (_==_)
+open import Agda.Builtin.Nat hiding (_==_; _+_; _*_)
 open import Agda.Builtin.Int
 open import Agda.Builtin.List
 open import Haskell.Data.Char
@@ -22,17 +22,23 @@ open import Haskell.Prim.Applicative
 open import Haskell.Control.Applicative
 open import Haskell.Prim.Monad
 open Do
-import Haskell.Prim.Int
+open import Haskell.Prim.Int using (unsafeIntToNat)
 open import Haskell.Prim using (case_of_; const; id; _$_; fromString; if_then_else_; _∷_; []; a; ⊥; _∘_)
 
 open import Tool.Cheat
+open import Algebra.SemiRing
 open import Algebra.Ring
+import Implementation.Nat
 open import Implementation.Int
+open import Implementation.Frac
+open import Implementation.Rational
+open import Operator.Decidable using (_≤#_)
+open import Operator.Pow
 open import Shell.Exp
 open import Shell.Statement
 
 {-# FOREIGN AGDA2HS
-import Prelude hiding (negate)
+import Prelude hiding (negate, Rational, (+), (*), (^))
 
 import Control.Applicative
 import Data.Char
@@ -40,6 +46,9 @@ import Data.Functor (void)
 
 pos :: (Integral a, Integral b) => a -> b
 pos = fromIntegral
+
+unsafeIntToNat :: Integral a => a -> Natural
+unsafeIntToNat = fromIntegral
 #-}
 
 -- I'm going to use a custom error function
@@ -167,6 +176,24 @@ integer = do sign <- optional (char '-');
                     (Just _) -> pure (negate (pos n))}
 {-# COMPILE AGDA2HS integer #-}
 
+-- We parse decimal fractions as rationals.
+-- (Maybe we should warn the user
+-- that these are only decimals...
+-- e.g. that 0.333 is not 1/3 :D)
+decimal : Parser Rational
+decimal = do
+  intPart <- integer
+  char '.'
+  right <- some (satisfy isDigit)
+  case (runParser natural right) of λ where
+    (Left err) -> failWith err
+    (Right (fracPart , _)) -> let e = unsafeIntToNat (length right) in
+                                                    -- v beware; we must not null it if intPart ≃# 0
+      pure (MkFrac (intPart * (pos 10) ^ e + (if pos 0 ≤# intPart then pos fracPart else negate (pos fracPart)))
+                   (pos 10 ^ e)
+                   cheat)
+{-# COMPILE AGDA2HS decimal #-}
+
 between : {left a right : Set} -> Parser left -> Parser a -> Parser right -> Parser a
 between left a right -- left *> a <* right
   = do left
@@ -209,6 +236,10 @@ natural' = tok natural
 integer' : Parser Int
 integer' = tok integer
 {-# COMPILE AGDA2HS integer' #-}
+
+decimal' : Parser Rational
+decimal' = tok decimal
+{-# COMPILE AGDA2HS decimal' #-}
 
 char' : Char -> Parser ⊤
 char' c = tok $ char c
@@ -314,9 +345,10 @@ pHistory' = History <$> (pKeyword' "history" *> char' '[' *> natural' <* char' '
 -- or an expression between parantheses.
 -- Here, we actually only parse integers without a negation sign,
 -- as that is going to be treated as a prefix operator.
+-- Note: the decimals must be checked _before_ the integers.
 {-# TERMINATING #-}
 pAtom pExp : {real : Set} -> Parser (Exp real)
-pAtom = ((IntLit ∘ pos) <$>  natural') <|> pBool <|> pRealConst <|> pHistory' <|> (Var <$> pIdent') <|> between (char' '(') pExp (char' ')')
+pAtom = (RatLit <$> decimal') <|>((IntLit ∘ pos) <$>  natural') <|> pBool <|> pRealConst <|> pHistory' <|> (Var <$> pIdent') <|> between (char' '(') pExp (char' ')')
 {-# COMPILE AGDA2HS pAtom #-}
 
 -- negation
