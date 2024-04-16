@@ -25,7 +25,7 @@ data Exp (real : Set) : Set where
 
   Neg Not : Exp real -> Exp real
 
-  Div Mul Sub Add Lt Le Eq And Or : Exp real -> Exp real -> Exp real
+  Pow Div Mul Sub Add Lt Le Eq And Or : Exp real -> Exp real -> Exp real
 
   -- real functions
   Pi E : Exp real

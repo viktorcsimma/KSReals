@@ -369,8 +369,13 @@ pNot : {real : Set} -> Parser (Exp real)
 pNot = Not <$> (char' '!' *> pRealFun) <|> pRealFun
 {-# COMPILE AGDA2HS pNot #-}
 
+-- Beware; this is infixr.
+pPow : {real : Set} -> Parser (Exp real)
+pPow = chainr1 pNot (Exp.Pow <$ char' '^')
+{-# COMPILE AGDA2HS pPow #-}
+
 pDiv : {real : Set} -> Parser (Exp real)
-pDiv = chainl1 pNot (Div <$ char' '/')
+pDiv = chainl1 pPow (Div <$ char' '/')
 {-# COMPILE AGDA2HS pDiv #-}
 
 pMul : {real : Set} -> Parser (Exp real)

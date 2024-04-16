@@ -32,6 +32,7 @@ open import Algebra.Ring
 open import Algebra.Field
 open import Operator.Cast
 open import Operator.Decidable
+open import Operator.Pow
 open import Implementation.Nat
 open import Implementation.Int
 open import Implementation.Frac
@@ -40,6 +41,7 @@ open import RealTheory.AppRational
 open import RealTheory.Completion
 open import RealTheory.Real
 import RealTheory.Instance.Cast
+import RealTheory.Instance.Pow
 open import Function.Exp
 open import Function.Trigonometric
 open import Function.SquareRoot
@@ -171,6 +173,33 @@ evalExp' vars hist (Not exp) = do
   case val of λ where
     (VBool b) -> Right $ VBool (not b)
     _       -> Left "operator '!' is not applicable to numbers"
+-- for the sake of agda2hs,
+-- we have to check the sign of the exponent with an if_then_else_
+evalExp' vars hist (Pow exp1 exp2) = do
+  val1 <- evalExp' vars hist exp1
+  val2 <- evalExp' vars hist exp2
+  let onlyNatExp = "for now, only natural exponents are supported"
+  let noBool = "operator '^' is not applicable to booleans"
+  case val1 of λ where
+    (VBool _) -> Left noBool
+    (VInt n) -> case val2 of λ where
+      (VBool _) -> Left noBool
+      (VInt t) -> if (pos 0 ≤# t)
+                   then Right (VInt (n ^ natAbs t))
+                   else Left onlyNatExp
+      _ -> Left onlyNatExp
+    (VRat q) -> case val2 of λ where
+      (VBool _) -> Left noBool
+      (VInt t) -> if (pos 0 ≤# t)
+                  then Right (VRat (q ^ natAbs t))
+                  else Left onlyNatExp
+      _ -> Left onlyNatExp
+    (VReal x) -> case val2 of λ where
+      (VBool _) -> Left noBool
+      (VInt t) -> if (pos 0 ≤# t)
+                  then Right (VReal (x ^ natAbs t))
+                  else Left onlyNatExp
+      _ -> Left onlyNatExp
 evalExp' vars hist (Div exp1 exp2) = do
   val1 <- evalExp' vars hist exp1
   val2 <- evalExp' vars hist exp2
