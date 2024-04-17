@@ -186,8 +186,9 @@ instance
   StrongSetoid._><_ strongSetoidInt x y = x ≡ y -> ⊥
   StrongSetoid.><-irrefl strongSetoidInt eq neq = neq eq
   StrongSetoid.><-sym strongSetoidInt neq refl = neq refl
-  StrongSetoid.><-cotrans strongSetoidInt neqxy z = cheat  -- I think _≡_ is decidable; isn't it?
-  StrongSetoid.><-tight-apart strongSetoidInt = cheat , λ eq neq -> neq eq
+  StrongSetoid.><-cotrans strongSetoidInt neqxy (pos z) = cheat
+  StrongSetoid.><-cotrans strongSetoidInt neqxy (negsuc z) = cheat  -- I think _≡_ is decidable; isn't it?
+  StrongSetoid.><-tight-apart strongSetoidInt = (λ f → cheat) , λ eq neq -> neq eq
   {-# COMPILE AGDA2HS strongSetoidInt #-}
 
   semiRingInt : SemiRing Int
@@ -195,7 +196,17 @@ instance
   SemiRing._+_ semiRingInt = intPlus
   SemiRing._*_ semiRingInt = intTimes
   SemiRing.+-proper semiRingInt refl refl = refl
-  SemiRing.+-assoc semiRingInt x y z = cheat
+  SemiRing.+-assoc semiRingInt (pos n₁) (pos n) (pos n₂) = cong pos (+-assoc n₁ n n₂)
+  SemiRing.+-assoc semiRingInt (pos n₁) (pos n) (negsuc n₂) = cheat
+  SemiRing.+-assoc semiRingInt (negsuc n₁) (pos n) (pos n₂) = cheat
+  SemiRing.+-assoc semiRingInt (negsuc n₁) (pos n) (negsuc n₂) = cheat
+  SemiRing.+-assoc semiRingInt (pos n₁) (negsuc n) (pos n₂) = cheat
+  SemiRing.+-assoc semiRingInt (pos n₁) (negsuc n) (negsuc n₂) = cheat
+  SemiRing.+-assoc semiRingInt (negsuc n₁) (negsuc n) (pos n₂) = cheat
+  -- suc n + m = suc (n + m)
+  SemiRing.+-assoc semiRingInt (negsuc n₁) (negsuc n) (negsuc n₂) = cong negsuc (cong suc 
+                                                                    (trans (+-assoc (suc n₁) n n₂) 
+                                                                    (trans (cong suc (+-comm n₁ (n + n₂))) (sym (+-comm n₁ (suc (n + n₂)))))))
   SemiRing.*-proper semiRingInt refl refl = refl
   SemiRing.*-assoc semiRingInt x y z = cheat
   SemiRing.null semiRingInt = pos 0
@@ -357,3 +368,4 @@ open Integers {{...}} public
 class Ring a => Integers a where
   integersToRing :: Ring b => a -> b
 #-}
+ 
