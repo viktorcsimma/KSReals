@@ -174,7 +174,8 @@ instance
                                                        λ proof -> snd (≃#-correct n n₁) (cong (λ {(pos n) -> n; (negsuc n) -> n}) proof)
   DecSetoid.≃#-correct decSetoidInt (pos n) (negsuc n₁) = (λ ()) , λ ()
   DecSetoid.≃#-correct decSetoidInt (negsuc n) (pos n₁) = (λ ()) , λ ()
-  DecSetoid.≃#-correct decSetoidInt (negsuc n) (negsuc n₁) = cheat
+  DecSetoid.≃#-correct decSetoidInt (negsuc n) (negsuc n₁) = (λ proof -> cong negsuc (fst (≃#-correct n n₁) proof)) ,
+                                                       λ proof -> snd (≃#-correct n n₁) (cong (λ {(pos n) -> n; (negsuc n) -> n}) proof)
   {-# FOREIGN AGDA2HS
   instance DecSetoid Integer where
     a ≃# b = a Prelude.== b  -- For some reason, GHC only accepts it in this form.
