@@ -18,7 +18,10 @@ data Exp (real : Set) : Set where
   BoolLit : Bool -> Exp real
   IntLit : Int -> Exp real
   RatLit : Rational -> Exp real
-  RealLit : real -> Exp real
+  RealLit : real -> Exp real  -- actually, such literals do not really exist;
+                              -- so maybe we could just left it out
+                              -- and omit the type parameter
+                              -- but maybe it's more futureproof this way
 
   Var : String -> Exp real
   History : Nat -> Exp real  -- contains the index; e.g. 1 is the last but one

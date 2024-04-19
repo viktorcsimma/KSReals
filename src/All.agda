@@ -44,6 +44,7 @@ import RealTheory.Interval
 import Shell.Interaction
 import Shell.Statement
 import Shell.Exp
+import Shell.Evaluation
 import Shell.CalcState
 import Shell.Parser
 import Shell.Value
@@ -61,6 +62,10 @@ import Function.SquareRoot
 import Function.AlternatingSeries
 import Function.Exp
 import Function.Trigonometric
+-- the tests;
+-- they only get here to be checked by the typechecker,
+-- but we do not want GHC to compile the empty files generated
+import Test.Parser
 
 -- And now, we also copy them into the Haskell source;
 -- this way, we can compile everything by compiling All.hs.
@@ -102,6 +107,7 @@ import RealTheory.Real
 import Shell.Interaction
 import Shell.Statement
 import Shell.Exp
+import Shell.Evaluation
 import Shell.CalcState
 import Shell.Parser
 import Shell.Value
