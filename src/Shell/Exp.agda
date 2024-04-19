@@ -13,24 +13,26 @@ open import Implementation.Rational
 import Prelude hiding (Rational)
 #-}
 
--- real is the real type used.
-data Exp (real : Set) : Set where
-  BoolLit : Bool -> Exp real
-  IntLit : Int -> Exp real
-  RatLit : Rational -> Exp real
-  RealLit : real -> Exp real  -- actually, such literals do not really exist;
-                              -- so maybe we could just left it out
-                              -- and omit the type parameter
-                              -- but maybe it's more futureproof this way
+-- Because we have no real literals,
+-- we don't actually need to know
+-- the real type
+data Exp : Set where
+  BoolLit : Bool -> Exp
+  IntLit : Int -> Exp
+  RatLit : Rational -> Exp
+  -- Actually, real literals do not really exist;
+  -- as you can only express irrational numbers
+  -- with function outputs (maybe nullary, as with e and pi),
+  -- which are parsable in themselves.
 
-  Var : String -> Exp real
-  History : Nat -> Exp real  -- contains the index; e.g. 1 is the last but one
+  Var : String -> Exp
+  History : Nat -> Exp  -- contains the index; e.g. 1 is the last but one
 
-  Neg Not : Exp real -> Exp real
+  Neg Not : Exp -> Exp
 
-  Pow Div Mul Sub Add Lt Le Eq And Or : Exp real -> Exp real -> Exp real
+  Pow Div Mul Sub Add Lt Le Eq And Or : Exp -> Exp -> Exp
 
   -- real functions
-  Pi E : Exp real
-  Expo Sin Cos Sqrt : Exp real -> Exp real
+  Pi E : Exp
+  Expo Sin Cos Sqrt : Exp -> Exp
 {-# COMPILE AGDA2HS Exp #-}

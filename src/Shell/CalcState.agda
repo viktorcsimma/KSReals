@@ -74,7 +74,7 @@ maybeAns (MkCalcState varsRef _) = do
 -- Beware: for complex statements (e.g. an if or a while statement),
 -- it might modify variables even if it fails!
 execStatement :: AppRational aq =>
-    CalcState (C aq) -> Statement (C aq) -> IO (Either String (Value (C aq)))
+    CalcState (C aq) -> Statement -> IO (Either String (Value (C aq)))
 execStatement calcState Empty = do
   ma <- maybeAns calcState
   case ma of
@@ -126,7 +126,7 @@ execStatement calcState stmt@(While condExp program) = do
 -- Beware: for complex statements (e.g. an if or a while statement),
 -- it might modify variables even if it fails!
 execProgram :: AppRational aq =>
-    CalcState (C aq) -> [Statement (C aq)] -> IO (Either String (Value (C aq)))
+    CalcState (C aq) -> [Statement] -> IO (Either String (Value (C aq)))
 execProgram calcState [] = execStatement calcState Empty
 execProgram calcState stmts =
   foldM execNext
@@ -145,7 +145,7 @@ clear (MkCalcState vars hist) = do
 -- Evaluates an expression and return its value,
 -- or an error message.
 -- It does not modify the IORefs.
-evalExp :: AppRational aq => CalcState (C aq) -> Exp (C aq) -> IO (Either String (Value (C aq)))
+evalExp :: AppRational aq => CalcState (C aq) -> Exp -> IO (Either String (Value (C aq)))
 evalExp (MkCalcState vars hist) exp = do
     vars <- readIORef vars
     hist <- readIORef hist

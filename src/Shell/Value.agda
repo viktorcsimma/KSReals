@@ -25,11 +25,3 @@ data Value (real : Set) : Set where
   VReal : real -> Value real
 {-# COMPILE AGDA2HS Value #-}
 
--- Turning values back into expressions
--- as literals.
-valToExp : {real : Set} -> Value real -> Exp real
-valToExp (VBool x) = BoolLit x
-valToExp (VInt x) = IntLit x
-valToExp (VRat x) = RatLit x
-valToExp (VReal x) = RealLit x
-{-# COMPILE AGDA2HS valToExp #-}

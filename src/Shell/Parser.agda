@@ -300,7 +300,7 @@ chainl1 {a} v op = v >>= parseLeft v op
 
 -- These also consume whitespaces!
 
-pBool : {real : Set} -> Parser (Exp real)
+pBool : Parser Exp
 pBool = BoolLit <$> (true <$ string' "True" <|> false <$ string' "False")
 {-# COMPILE AGDA2HS pBool #-}
 
@@ -328,14 +328,14 @@ pKeyword' s = do
 {-# COMPILE AGDA2HS pKeyword' #-}
 
 -- Parsing real constants.
-pRealConst : {real : Set} -> Parser (Exp real)
+pRealConst : Parser Exp
 pRealConst = (Pi <$ pKeyword' "pi") <|>
              (E  <$ pKeyword' "e")
 {-# COMPILE AGDA2HS pRealConst #-}
 
 -- Parse a history reference in the form of "history[n]".
 -- E.g. history[1] will be the result of the last but one statement.
-pHistory' : {real : Set} -> Parser (Exp real)
+pHistory' : Parser Exp
 pHistory' = History <$> (pKeyword' "history" *> char' '[' *> natural' <* char' ']')
 {-# COMPILE AGDA2HS pHistory' #-}
 
@@ -347,17 +347,17 @@ pHistory' = History <$> (pKeyword' "history" *> char' '[' *> natural' <* char' '
 -- as that is going to be treated as a prefix operator.
 -- Note: the decimals must be checked _before_ the integers.
 {-# TERMINATING #-}
-pAtom pExp : {real : Set} -> Parser (Exp real)
+pAtom pExp : Parser Exp
 pAtom = (RatLit <$> decimal') <|>((IntLit ∘ pos) <$>  natural') <|> pBool <|> pRealConst <|> pHistory' <|> (Var <$> pIdent') <|> between (char' '(') pExp (char' ')')
 {-# COMPILE AGDA2HS pAtom #-}
 
 -- negation
-pNeg : {real : Set} -> Parser (Exp real)
+pNeg : Parser Exp
 pNeg = Neg <$> (char' '-' *> pAtom) <|> pAtom
 {-# COMPILE AGDA2HS pNeg #-}
 
 -- Parsing real functions.
-pRealFun : {real : Set} -> Parser (Exp real)
+pRealFun : Parser Exp
 pRealFun = (Expo <$> (pKeyword' "exp" *> pNeg)) <|>
            (Sqrt <$> (pKeyword' "sqrt" *> pNeg)) <|>
            (Sin  <$> (pKeyword' "sin" *> pNeg)) <|>
@@ -365,68 +365,68 @@ pRealFun = (Expo <$> (pKeyword' "exp" *> pNeg)) <|>
            pNeg
 {-# COMPILE AGDA2HS pRealFun #-}
 
-pNot : {real : Set} -> Parser (Exp real)
+pNot : Parser Exp
 pNot = Not <$> (char' '!' *> pRealFun) <|> pRealFun
 {-# COMPILE AGDA2HS pNot #-}
 
 -- Beware; this is infixr.
-pPow : {real : Set} -> Parser (Exp real)
+pPow : Parser Exp
 pPow = chainr1 pNot (Exp.Pow <$ char' '^')
 {-# COMPILE AGDA2HS pPow #-}
 
-pDiv : {real : Set} -> Parser (Exp real)
+pDiv : Parser Exp
 pDiv = chainl1 pPow (Div <$ char' '/')
 {-# COMPILE AGDA2HS pDiv #-}
 
-pMul : {real : Set} -> Parser (Exp real)
+pMul : Parser Exp
 pMul = chainl1 pDiv (Mul <$ char' '*')
 {-# COMPILE AGDA2HS pMul #-}
 
-pSub : {real : Set} -> Parser (Exp real)
+pSub : Parser Exp
 pSub = chainl1 pMul (Sub <$ char' '-')
 {-# COMPILE AGDA2HS pSub #-}
 
-pAdd : {real : Set} -> Parser (Exp real)
+pAdd : Parser Exp
 pAdd = chainl1 pSub (Add <$ char' '+')
 {-# COMPILE AGDA2HS pAdd #-}
 
-pLt : {real : Set} -> Parser (Exp real)
+pLt : Parser Exp
 pLt = nonAssoc Lt pAdd (char' '<')
 {-# COMPILE AGDA2HS pLt #-}
 
-pLe : {real : Set} -> Parser (Exp real)
+pLe : Parser Exp
 pLe = nonAssoc Le pLt (string' "<=")
 {-# COMPILE AGDA2HS pLe #-}
 
-pEq : {real : Set} -> Parser (Exp real)
+pEq : Parser Exp
 pEq = nonAssoc Exp.Eq pLe (string' "==")
 {-# COMPILE AGDA2HS pEq #-}
 
-pAnd : {real : Set} -> Parser (Exp real)
+pAnd : Parser Exp
 pAnd = chainl1 pEq (And <$ string' "&&")
 {-# COMPILE AGDA2HS pAnd #-}
 
-pOr : {real : Set} -> Parser (Exp real)
+pOr : Parser Exp
 pOr = chainl1 pAnd (Or <$ string' "||")
 {-# COMPILE AGDA2HS pOr #-}
 
 -- Parses an expression.
 -- Actually, it is an alias for
 -- the operator with the least precedence.
--- pExp : {real : Set} -> Parser (Exp real)
+-- pExp : Parser Exp
 pExp = pOr
 {-# COMPILE AGDA2HS pExp #-}
 
 {-# TERMINATING #-}
-pStatement : {real : Set} -> Parser (Statement real)
+pStatement : Parser Statement
 
 -- Program parser
 -- statements separated by semicolons
-pProgram : {real : Set} -> Parser (List (Statement real))
+pProgram : Parser (List Statement)
 pProgram = sepBy1 pStatement (char' ';')
 {-# COMPILE AGDA2HS pProgram #-}
 
--- statement : {real : Set} -> Parser (Statement real)
+-- statement : Parser Statement
 pStatement = (Assign <$> pIdent' <*> (char' '=' *> (pExp <* ws)))
   <|> If <$> (pKeyword' "if" *> (pExp <* ws)) <*> (char' '{' *> pProgram) <* char' '}'
   <|> While <$> (pKeyword' "while" *> (pExp <* ws)) <*> (char' '{' *> pProgram) <* char' '}'
