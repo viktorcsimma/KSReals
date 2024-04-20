@@ -23,6 +23,7 @@ import Tool.PropositionalEquality
 import HaskellInstance.Show
 -- these have to be explicitly removed for now,
 -- as they confuse agda2hs
+-- import HaskellInstance.Eq
 -- import HaskellInstance.Number
 -- import HaskellInstance.Num
 -- import HaskellInstance.Fractional
@@ -66,6 +67,7 @@ import Function.Trigonometric
 -- they only get here to be checked by the typechecker,
 -- but we do not want GHC to compile the empty files generated
 import Test.Parser
+import Test.Haskell.Parser
 
 -- And now, we also copy them into the Haskell source;
 -- this way, we can compile everything by compiling All.hs.
@@ -86,6 +88,7 @@ import Tool.Stream
 import HaskellInstance.Show
 -- these have to be explicitly removed for now,
 -- as they confuse agda2hs
+-- import HaskellInstance.Eq
 -- import HaskellInstance.Number
 -- import HaskellInstance.Num
 -- import HaskellInstance.Fractional
@@ -122,4 +125,6 @@ import Function.SquareRoot
 import Function.AlternatingSeries
 import Function.Exp
 import Function.Trigonometric
+-- This cannot be put here; CMake's GHC would search for QuickCheck.
+-- import Test.Haskell.Parser
 #-}
