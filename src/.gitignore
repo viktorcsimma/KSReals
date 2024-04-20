@@ -8,3 +8,4 @@ Main
 # for the sake of Cabal or the C preprocessor
 !Main.hs
 !Platform.hs
+!TestMain.hs

@@ -137,7 +137,7 @@ eof = MkParser $ λ s -> case s of λ where
 
 satisfy : (Char -> Bool) -> Parser Char
 satisfy p = MkParser $ λ s -> case s of λ where
-  (x ∷ xs) -> if p x then Right (x , xs) else Left (fromString "character not satisfying condition")
+  (x ∷ xs) -> if p x then Right (x , xs) else Left ("character not satisfying condition: " ++ x ∷ [])
   _            -> Left (fromString "unexpected end-of-file when calling `satisfy`")
 {-# COMPILE AGDA2HS satisfy #-}
 

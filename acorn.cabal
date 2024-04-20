@@ -8,6 +8,7 @@ description:
 -- Ouch... these need to be listed.
 extra-source-files:  acorn.agda-lib,
                      src/All.agda,
+                     src/TestMain.agda,
                      src/Algebra/*.agda,
                      src/Function/*.agda,
                      src/HaskellInstance/*.agda,
@@ -72,6 +73,7 @@ library
                        RealTheory.Real,
                        RealTheory.Continuity,
                        Shell.Exp,
+                       Shell.Evaluation,
                        Shell.Statement,
                        Shell.CalcState,
                        Shell.Parser,
@@ -114,6 +116,7 @@ library
                        RealTheory.Real,
                        RealTheory.Continuity,
                        Shell.Exp,
+                       Shell.Evaluation,
                        Shell.Statement,
                        Shell.CalcState,
                        Shell.Parser,
@@ -162,3 +165,17 @@ executable AcornShell
   -- for interrupting the calculation thread
   -- with a foreign call
   ghc-options:         -threaded
+
+test-suite AcornQuickCheck
+  type:                exitcode-stdio-1.0
+  hs-source-dirs:      src
+  main-is:             TestMain.hs
+  other-modules:       Test.Haskell.Parser
+  build-depends:       base     >= 4.13    && < 4.20,
+                       containers,
+                       text,
+                       deepseq >= 1.4,
+                       acorn,
+                       QuickCheck >= 2.14
+  default-language:    GHC2021
+  

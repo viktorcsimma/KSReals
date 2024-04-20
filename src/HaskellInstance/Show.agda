@@ -20,7 +20,7 @@ open import Haskell.Prim.String
 open import Haskell.Prim.List
 open import Haskell.Prim.Show
 open import Haskell.Prim.Tuple
-open import Haskell.Prim using (const; if_then_else_)
+open import Haskell.Prim using (const; if_then_else_; fromString)
 
 open import Algebra.SemiRing
 open import Algebra.Ring
@@ -106,8 +106,9 @@ instance
     show = showDyadic
   #-}
 
+  -- Brackets are important when converting syntax trees back to strings.
   iShowFrac : {a : Set} {{semiring : SemiRing a}} {{showa : Show a}} -> Show (Frac a)
-  Show.show iShowFrac q = show (num q) ++ ' ' ∷ '/' ∷ ' ' ∷ show (den q)
+  Show.show iShowFrac q = "(" ++ show (num q) ++ ' ' ∷ '/' ∷ ' ' ∷ show (den q) ++ ")"
   Show.showsPrec iShowFrac _ x s = show x ++ s
   Show.showList iShowFrac = defaultShowList (const show)
   {-# FOREIGN AGDA2HS
