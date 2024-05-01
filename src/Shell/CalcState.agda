@@ -93,8 +93,8 @@ execStatement calcState (Eval exp) = do
       return (Right val)
 execStatement calcState (Assign name exp) = do
   val <- evalExp calcState exp
-  case val of
-    Left err -> return $ Left ("error while evaluating value to assign: " ++ err)
+  case val of                -- v "error while executing statement; "
+    Left err -> return $ Left ("while evaluating value to assign: " ++ err)
     Right val -> do
       let varsRef = variables calcState; histRef = history calcState
       vars <- readIORef varsRef
