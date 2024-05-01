@@ -161,6 +161,15 @@ bracket : String -> String
 bracket str = "(" ++ dropOneSpace str ++ ")"
 {-# COMPILE AGDA2HS bracket #-}
 
+-- This would be a function
+-- which converts syntax trees back to strings,
+-- with as few brackets as possible.
+-- This would enable us to write a general test case:
+-- if we convert an arbitrary tree to a string
+-- and then parse it again,
+-- we should get back the original tree.
+-- The function, however, is still incomplete.
+
 expToString' : Exp -> String
 
 -- Helper functions for expToString'.
@@ -288,7 +297,8 @@ prop_addCorrect left right = (λ {(Right (Add left' right' , _)) -> left == left
 
 -- It can similarly be solved for statement syntax.
 
--- And full test cases:
+-- And full test cases
+-- (but these do not work for the time being):
 prop_fullCorrect : Exp -> Bool
 prop_fullCorrect exp = (λ {(Right (exp' , _)) -> exp == exp'; _ -> False})
                           $ runParser pExp (expToString exp)

@@ -4,18 +4,29 @@
 -- (and actually, I don't have all of the functions needed).
 -- But it is still a .agda file so that I don't delete it accidentally
 -- with other .hs files.
+{-# OPTIONS --erasure --guardedness #-}
 module HaskellInstance.Floating where
+
+-- For agda2hs to know dependencies.
+import Algebra.Field
+import Algebra.Ring
+import Function.Exp
+import Function.SquareRoot
+import Function.Trigonometric
+import RealTheory.AppRational
+import RealTheory.Completion
+import HaskellInstance.Fractional
 
 {-# FOREIGN AGDA2HS
 
 import Algebra.Field
 import Algebra.Ring
-import qualified Functions.Exp
-import qualified Functions.SquareRoot
-import qualified Functions.Trigonometric
-import RealTheory.AppRationals
+import qualified Function.Exp
+import qualified Function.SquareRoot
+import qualified Function.Trigonometric
+import RealTheory.AppRational
 import RealTheory.Completion
-import HaskellInstances.Fractional
+import HaskellInstance.Fractional
 
 -- For error messages.
 notImplemented :: String -> String
