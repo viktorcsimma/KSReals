@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.9)
 
 # the language is given so that GNUInstallDirs knows where to install
-project(Acorn LANGUAGES C)
+project(Acorn)
 
 add_library(Acorn src/All.agda src/acornInterruptEvaluation.c)
 add_library(Acorn::Acorn ALIAS Acorn)

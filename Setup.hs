@@ -2,7 +2,6 @@
 -- before compiling the generated Haskell modules.
 
 import Distribution.Simple
-import Distribution.Types.HookedBuildInfo (emptyHookedBuildInfo)
 import System.Process (callCommand)
 
 main = defaultMainWithHooks simpleUserHooks { preBuild = prebuild }
