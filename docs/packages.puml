@@ -1,37 +1,27 @@
-@startuml structure
+@startuml packages
 
 component Tool
 
 component Algebra
 
-component Order
-Order ..> Algebra
-
 component Operator
 Operator ..> Algebra
-Operator ..> Order
 
 component Implementation
 Implementation ..> Algebra
-Implementation ..> Order
-Implementation ..> Operator #bb0000
+Implementation ..> Operator #ffaa00
 ' see Shift
-Operator ..> Implementation #bb0000
+Operator ..> Implementation #ffaa00
 ' see PosRational
 Implementation ..> Tool
 
 component RealTheory
 RealTheory ..> Algebra
-RealTheory ..> Order
 RealTheory ..> Operator
 RealTheory ..> Implementation
 
 component Function
 Function ..> RealTheory
 Function ..> Tool
-
-component HaskellInstance
-HaskellInstance ..> Implementation
-HaskellInstance ..> RealTheory
 
 @enduml
