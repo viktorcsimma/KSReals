@@ -24,6 +24,7 @@ open import Implementation.Nat
 open import Shell.Parser
 open import Shell.Exp
 open import Shell.Statement
+open import Test.Haskell.Parser using (bracket)
 
 -- First idea:
 -- we already write it with the general type signature,
@@ -110,15 +111,13 @@ notProof str exp hyp = cheat
 
 -- For a binary operator:
 @0 addProof : ∀ (str1 str2 : String) (exp1 exp2 : Exp)
-                -> runParser pSub str1 ≡ Right (exp1 , "")
-                -> runParser pSub str2 ≡ Right (exp2 , "")
-                -> runParser pExp (str1 ++ '+' ∷ str2) ≡ Right (Add exp1 exp2 , "")
--- actually, this is like if 1-2 and 3-4 had brackets around them;
--- but the result is correct in these cases too
+                -> runParser pAddSub str1 ≡ Right (exp1 , "")
+                -> runParser pAddSub str2 ≡ Right (exp2 , "")
+                -> runParser pExp (bracket str1 ++ '+' ∷ bracket str2) ≡ Right (Add exp1 exp2 , "")
 addProof ('1' ∷ '-' ∷ '2' ∷ [])
          ('3' ∷ '-' ∷ '4' ∷ [])
-         (Sub (IntLit (pos 1)) (IntLit (pos 2)))
-         (Sub (IntLit (pos 3)) (IntLit (pos 4)))
+         (Sub (NatLit 1) (NatLit 2))
+         (Sub (NatLit 3) (NatLit 4))
          refl refl = refl
 -- this shall not work, as pSub must not be able to parse it without brackets
 -- but it is not; so this is fine
@@ -141,8 +140,8 @@ addProof str1 str2 exp1 exp2 e1 e2 = cheat
                                 ≡ Right (If condExp program , "")
 ifProof ('3' ∷ '=' ∷ '=' ∷ '5' ∷ [])
         ('t' ∷ '=' ∷ '5' ∷ ';' ∷ 't' ∷ '=' ∷ 't' ∷ '-' ∷ '1' ∷ [])
-        (Eq (IntLit (pos 3)) (IntLit (pos 5)))
-        (Assign ('t' ∷ []) (IntLit (pos 5)) ∷ Assign ('t' ∷ []) (Sub (Var ('t' ∷ [])) (IntLit (pos 1))) ∷ [])
+        (Eq (NatLit 3) (NatLit 5))
+        (Assign ('t' ∷ []) (NatLit 5) ∷ Assign ('t' ∷ []) (Sub (Var ('t' ∷ [])) (NatLit 1)) ∷ [])
         refl refl = refl
 ifProof condStr progStr condExp program hyp1 hyp2 = cheat
 
@@ -156,13 +155,13 @@ ifProof condStr progStr condExp program hyp1 hyp2 = cheat
 
 @0 fullTest1 : ∀ {real : Set} ->
                 runParser pExp "3 - sin(pi) * 5 "
-                  ≡ Right (Sub (IntLit (pos 3)) (Mul (Sin Pi) (IntLit (pos 5))) , "")
+                  ≡ Right (Sub (NatLit 3) (Mul (Sin Pi) (NatLit 5)) , "")
 fullTest1 = refl
 @0 fullTest2 : ∀ {real : Set} ->
                 runParser pProgram "if (3 == 3) {t = 3 - sin(pi) * 5; t}; while (5 <= 4) {}"
-                  ≡ Right (If (Eq (IntLit (pos 3)) (IntLit (pos 3)))
-                              (Assign "t" (Sub (IntLit (pos 3)) (Mul (Sin Pi) (IntLit (pos 5)))) ∷ Eval (Var "t") ∷ [])
-                           ∷ While (Le (IntLit (pos 5)) (IntLit (pos 4)))
+                  ≡ Right (If (Eq (NatLit 3) (NatLit 3))
+                              (Assign "t" (Sub (NatLit 3) (Mul (Sin Pi) (NatLit 5))) ∷ Eval (Var "t") ∷ [])
+                           ∷ While (Le (NatLit 5) (NatLit 4))
                                     (Empty ∷ [])
                            ∷ []
                            , "")

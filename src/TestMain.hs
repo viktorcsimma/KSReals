@@ -5,10 +5,13 @@
 
 module Main where
 
+import System.Exit
 import Test.QuickCheck
 
 import Test.Haskell.Parser
 
 -- All modules' testAll functions will be called here.
 main :: IO ()
-main = parserTestAll
+main = do
+  success <- parserTestAll
+  if success then exitSuccess else exitFailure

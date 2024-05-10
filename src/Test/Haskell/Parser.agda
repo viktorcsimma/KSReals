@@ -36,6 +36,7 @@ open import Implementation.Rational
 open import RealTheory.AppRational
 open import RealTheory.Completion
 open import HaskellInstance.Eq
+open import HaskellInstance.Show
 
 open import Shell.Parser
 open import Shell.Exp
@@ -45,7 +46,8 @@ open import Shell.Statement
 import Test.QuickCheck
 
 import Prelude (Show, Bool(..), Either(..), show, IO, String, ($), (+), (++), Ord(..), (&&),
-                  (<$>), (/=), Monad(..), Applicative(..), abs, (.), ceiling, sqrt, fromIntegral)
+                 (<$>), (/=), Monad(..), Applicative(..), abs, (.), ceiling, sqrt,
+                 fromIntegral, and, mapM)
 
 import Implementation.Frac
 import Implementation.Rational
@@ -88,7 +90,7 @@ instance Arbitrary Exp where
                       smallArbitrary = (resize sn arbitrary :: Gen Exp) in
     frequency
       [ (5, BoolLit <$> arbitrary)
-      , (5, IntLit  <$> arbitrary)
+      , (5, NatLit  <$> arbitrary)
       -- We take this out as it confuses Eq
       -- (it would be parsed as Div).
       -- , (5, RatLit  <$> arbitrary)
@@ -125,8 +127,8 @@ instance Arbitrary Exp where
 -- Atomics have an infinite precedence.
 precedence : Exp -> Nat
 precedence (BoolLit x) = 100
-precedence (IntLit x) = 100
-precedence (RatLit x) = 100
+precedence (NatLit x) = 100
+precedence (DecimalLit x) = 100
 precedence (Var x) = 100
 precedence (History x) = 100 -- for now, at least
 precedence (Neg x) = 9
@@ -176,34 +178,63 @@ expToString' : Exp -> String
 private
   -- outer precedence, inner expression, operator
   prefix : Nat -> Exp -> String -> String
-  prefix prec inner op = if prec > precedence inner
+  prefix prec inner op = if 100 > precedence inner -- so if it is not atomic
                            then op ++ bracket (expToString' inner)
                            else op ++ ' ' ∷ (expToString' inner)
   {-# COMPILE AGDA2HS prefix #-}
 
   -- outer precedence, left child, right child, operator
+  -- NOTE: brackets somehow disappear in Haskell;
+  -- so we have to be careful.
+  -- I think I will use helper functions.
   infixl' : Nat -> Exp -> Exp -> String -> String
-  infixl' prec left right op = (if prec > precedence left
+  infixl' prec left right op = leftSide
+                               ++ " " ++ op ++ " "
+                               ++ rightSide
+    where
+    leftSide : String
+    leftSide = if prec > precedence left
                                   then bracket (expToString' left)
-                                  else expToString' left)
-                               ++ " " ++ op ++ " " ++ 
-                               (if prec >= precedence right
+                                  else expToString' left
+    rightSide : String
+    rightSide = if prec >= precedence right
                                   then bracket (expToString' right)
-                                  else expToString' right)
+                                  else expToString' right
   {-# COMPILE AGDA2HS infixl' #-}
 
   -- similarly
   -- note the different usage of _>=_ and _>_
   -- outer precedence, left child, right child, operator
   infixr' : Nat -> Exp -> Exp -> String -> String
-  infixr' prec left right op = (if prec >= precedence left
+  infixr' prec left right op = leftSide
+                               ++ " " ++ op ++ " "
+                               ++ rightSide
+    where
+    leftSide : String
+    leftSide = if prec >= precedence left
                                   then bracket (expToString' left)
-                                  else expToString' left)
-                               ++ " " ++ op ++ " " ++ 
-                               (if prec > precedence right
+                                  else expToString' left
+    rightSide : String
+    rightSide = if prec > precedence right
                                   then bracket (expToString' right)
-                                  else expToString' right)
+                                  else expToString' right
   {-# COMPILE AGDA2HS infixr' #-}
+
+  -- similarly, but it puts a bracket to anything with the same precedence
+  nonAssoc' : Nat -> Exp -> Exp -> String -> String
+  nonAssoc' prec left right op = leftSide
+                               ++ " " ++ op ++ " "
+                               ++ rightSide
+    where
+    leftSide : String
+    leftSide = if prec >= precedence left
+                                  then bracket (expToString' left)
+                                  else expToString' left
+    rightSide : String
+    rightSide = if prec >= precedence right
+                                  then bracket (expToString' right)
+                                  else expToString' right
+  {-# COMPILE AGDA2HS nonAssoc' #-}
 
   -- for named functions
   -- inner expression and name
@@ -218,12 +249,12 @@ private
 -- We have to consider precedence levels.
 -- expToString' : Exp -> String
 expToString' (BoolLit x) = show x
-expToString' (IntLit x) = show x
-expToString' (RatLit x) = '(' ∷ show (num x) ++ '/' ∷ show (den x) ++ ")" 
+expToString' (NatLit x) = show x
+expToString' (DecimalLit x) = show x
 expToString' (Var x) = ' ' ∷ x
 expToString' (History x) = " history[" ++ show x ++ "]"
 expToString' (Neg inner) = prefix 9 inner "-"
-expToString' (Not inner) = prefix 4 inner "!"
+expToString' (Not inner) = prefix 5 inner "!"
 expToString' (Pow left right) = infixr' 8 left right "^"
 expToString' (Div left right) = infixl' 7 left right "/"
 expToString' (Mul left right) = infixl' 7 left right "*"
@@ -231,9 +262,9 @@ expToString' (Sub left right) = infixl' 6 left right "-"
 expToString' (Add left right) = infixl' 6 left right "+"
 -- some are actually infix (neither infixl nor infixr)
 -- but for the sake of simplicity:
-expToString' (Lt left right) = infixl' 4 left right "<"
-expToString' (Le left right) = infixl' 4 left right "<="
-expToString' (Exp.Eq left right) = infixl' 4 left right "=="
+expToString' (Lt left right) = nonAssoc' 4 left right "<"
+expToString' (Le left right) = nonAssoc' 4 left right "<="
+expToString' (Exp.Eq left right) = nonAssoc' 4 left right "=="
 expToString' (And left right) = infixr' 3 left right "&&"
 expToString' (Or left right) = infixr' 2 left right "||"
 expToString' Pi = " pi"
@@ -257,7 +288,7 @@ expToString = dropOneSpace ∘ expToString'
 @0 pExpCorrect : ∀ (exp : Exp) -> runParser pExp (expToString exp) ≡ Right (exp , "")
 -- Literals are hard to check because of the builtin show functions.
 pExpCorrect (BoolLit x) = {!!}
-pExpCorrect (IntLit x) = {!!}
+pExpCorrect (NatLit x) = {!!}
 pExpCorrect (RatLit x) = {!!}
 pExpCorrect (Var x) = {!!}
 pExpCorrect (History x) = {!!}
@@ -310,11 +341,13 @@ deriving instance Show Exp
 
 -- This contains all the propositions we would like to test.
 -- Actually, this will be called by main.
-parserTestAll :: IO ()
-parserTestAll = do
-  quickCheck prop_naturalCorrect
-  quickCheckWith stdArgs{maxSize = 10} prop_notCorrect
-  quickCheckWith stdArgs{maxSize = 10} prop_addCorrect
-  quickCheckWith stdArgs{maxSize = 10} prop_fullCorrect
+parserTestAll :: IO Bool
+parserTestAll =
+  and <$> mapM (isSuccess <$>)
+  [ quickCheckResult prop_naturalCorrect
+  , quickCheckWithResult stdArgs{maxSize = 10} prop_notCorrect
+  , quickCheckWithResult stdArgs{maxSize = 10} prop_addCorrect
+  , quickCheckWithResult stdArgs{maxSize = 10} prop_fullCorrect
+  ]
 #-}
 
