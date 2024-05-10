@@ -146,8 +146,8 @@ evalExp' vars hist (Sqrt exp) = do
     (VRat (MkFrac k d dNotNull))
         -> if (MkFrac k d dNotNull) <# Algebra.SemiRing.null
              then Left "square root of negative rational"
-             else Right $ VReal $ sin (multByAQ (cast k) (recip (cast d) cheat))
-                                    -- ^ TODO: implement this for Frac aq!
+             else Right $ VReal $ sqrt (multByAQ (cast k) (recip (cast d) cheat)) cheat
+                                  -- ^ TODO: implement this for Frac aq!
     (VReal x) -> Left "cannot decide sign of real for sqrt (coming soon)"
 evalExp' vars hist (Not exp) = do
   val <- evalExp' vars hist exp
