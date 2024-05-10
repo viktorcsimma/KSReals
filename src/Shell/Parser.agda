@@ -31,7 +31,7 @@ open import Algebra.Ring
 import Implementation.Nat
 open import Implementation.Int
 open import Implementation.Frac
-open import Implementation.Rational
+open import Implementation.Decimal
 open import Operator.Decidable using (_≤#_)
 open import Operator.Pow
 open import Shell.Exp
@@ -168,30 +168,24 @@ natural = foldl (\acc a -> acc * 10 + a) 0 <$> some digit
                                       -- ^ in theory, this will never be used, because `some` would return Left then
 {-# COMPILE AGDA2HS natural #-}
 
-integer : Parser Int
-integer = do sign <- optional (char '-');
-                n <- natural;
-                case sign of λ
-                   {Nothing -> pure (pos n);
-                    (Just _) -> pure (negate (pos n))}
-{-# COMPILE AGDA2HS integer #-}
-
 -- We parse decimal fractions as rationals.
 -- (Maybe we should warn the user
 -- that these are only decimals...
 -- e.g. that 0.333 is not 1/3 :D)
-decimal : Parser Rational
+-- This can also be only non-negative,
+-- as negation will be an operator.
+decimal : Parser Decimal
 decimal = do
-  intPart <- integer
+  intPart <- natural
   char '.'
   right <- some (satisfy isDigit)
   case (runParser natural right) of λ where
     (Left err) -> failWith err
     (Right (fracPart , _)) -> let e = unsafeIntToNat (length right) in
-                                                    -- v beware; we must not null it if intPart ≃# 0
-      pure (MkFrac (intPart * (pos 10) ^ e + (if pos 0 ≤# intPart then pos fracPart else negate (pos fracPart)))
-                   (pos 10 ^ e)
-                   cheat)
+        return $ MkDec
+                   (pos intPart * (pos 10) ^ e
+                       + pos fracPart)
+                   (negate (pos e))
 {-# COMPILE AGDA2HS decimal #-}
 
 between : {left a right : Set} -> Parser left -> Parser a -> Parser right -> Parser a
@@ -233,11 +227,7 @@ natural' : Parser Nat
 natural' = tok natural
 {-# COMPILE AGDA2HS natural' #-}
 
-integer' : Parser Int
-integer' = tok integer
-{-# COMPILE AGDA2HS integer' #-}
-
-decimal' : Parser Rational
+decimal' : Parser Decimal
 decimal' = tok decimal
 {-# COMPILE AGDA2HS decimal' #-}
 
@@ -275,6 +265,7 @@ nonAssoc f pa psep = do
 -- Parses one or more values
 -- and foldr's them with operators parsed from the string.
 -- If it can only find one, this is actually equivalent to calling v.
+-- The list of parsers represent the operators of equal precedence.
 {-# TERMINATING #-}
 chainr1 : Parser a -> Parser (a -> a -> a) -> Parser a
 chainr1 v op = do
@@ -348,25 +339,27 @@ pHistory' = History <$> (pKeyword' "history" *> char' '[' *> natural' <* char' '
 -- Note: the decimals must be checked _before_ the integers.
 {-# TERMINATING #-}
 pAtom pExp : Parser Exp
-pAtom = (RatLit <$> decimal') <|>((IntLit ∘ pos) <$>  natural') <|> pBool <|> pRealConst <|> pHistory' <|> (Var <$> pIdent') <|> between (char' '(') pExp (char' ')')
+pAtom = (DecimalLit <$> decimal') <|>(NatLit <$>  natural') <|> pBool <|> pRealConst <|> pHistory' <|> (Var <$> pIdent') <|> between (char' '(') pExp (char' ')')
+        <|> failWith "no parser matching the expression"
 {-# COMPILE AGDA2HS pAtom #-}
+
+-- Parsing real functions.
+-- This has to be the last one before pAtom.
+pRealFun : Parser Exp
+pRealFun = (Expo <$> (pKeyword' "exp" *> pAtom)) <|>
+           (Sqrt <$> (pKeyword' "sqrt" *> pAtom)) <|>
+           (Sin  <$> (pKeyword' "sin" *> pAtom)) <|>
+           (Cos  <$> (pKeyword' "cos" *> pAtom)) <|>
+           pAtom
+{-# COMPILE AGDA2HS pRealFun #-}
 
 -- negation
 pNeg : Parser Exp
-pNeg = Neg <$> (char' '-' *> pAtom) <|> pAtom
+pNeg = Neg <$> (char' '-' *> pRealFun) <|> pRealFun
 {-# COMPILE AGDA2HS pNeg #-}
 
--- Parsing real functions.
-pRealFun : Parser Exp
-pRealFun = (Expo <$> (pKeyword' "exp" *> pNeg)) <|>
-           (Sqrt <$> (pKeyword' "sqrt" *> pNeg)) <|>
-           (Sin  <$> (pKeyword' "sin" *> pNeg)) <|>
-           (Cos  <$> (pKeyword' "cos" *> pNeg)) <|>
-           pNeg
-{-# COMPILE AGDA2HS pRealFun #-}
-
 pNot : Parser Exp
-pNot = Not <$> (char' '!' *> pRealFun) <|> pRealFun
+pNot = Not <$> (char' '!' *> pNeg) <|> pNeg
 {-# COMPILE AGDA2HS pNot #-}
 
 -- Beware; this is infixr.
@@ -374,24 +367,18 @@ pPow : Parser Exp
 pPow = chainr1 pNot (Exp.Pow <$ char' '^')
 {-# COMPILE AGDA2HS pPow #-}
 
-pDiv : Parser Exp
-pDiv = chainl1 pPow (Div <$ char' '/')
-{-# COMPILE AGDA2HS pDiv #-}
+-- These have equal precedence.
+pMulDiv : Parser Exp
+pMulDiv = chainl1 pPow ((Mul <$ char' '*') <|> (Div <$ char' '/'))
+{-# COMPILE AGDA2HS pMulDiv #-}
 
-pMul : Parser Exp
-pMul = chainl1 pDiv (Mul <$ char' '*')
-{-# COMPILE AGDA2HS pMul #-}
-
-pSub : Parser Exp
-pSub = chainl1 pMul (Sub <$ char' '-')
-{-# COMPILE AGDA2HS pSub #-}
-
-pAdd : Parser Exp
-pAdd = chainl1 pSub (Add <$ char' '+')
-{-# COMPILE AGDA2HS pAdd #-}
+-- These too.
+pAddSub : Parser Exp
+pAddSub = chainl1 pMulDiv ((Add <$ char' '+') <|> (Sub <$ char' '-'))
+{-# COMPILE AGDA2HS pAddSub #-}
 
 pLt : Parser Exp
-pLt = nonAssoc Lt pAdd (char' '<')
+pLt = nonAssoc Lt pAddSub (char' '<')
 {-# COMPILE AGDA2HS pLt #-}
 
 pLe : Parser Exp
@@ -403,11 +390,11 @@ pEq = nonAssoc Exp.Eq pLe (string' "==")
 {-# COMPILE AGDA2HS pEq #-}
 
 pAnd : Parser Exp
-pAnd = chainl1 pEq (And <$ string' "&&")
+pAnd = chainr1 pEq (And <$ string' "&&")
 {-# COMPILE AGDA2HS pAnd #-}
 
 pOr : Parser Exp
-pOr = chainl1 pAnd (Or <$ string' "||")
+pOr = chainr1 pAnd (Or <$ string' "||")
 {-# COMPILE AGDA2HS pOr #-}
 
 -- Parses an expression.

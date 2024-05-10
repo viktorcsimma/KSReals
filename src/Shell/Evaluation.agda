@@ -31,6 +31,7 @@ open import Operator.Pow
 open import Implementation.Nat
 open import Implementation.Int
 open import Implementation.Frac
+open import Implementation.Decimal
 open import Implementation.Rational
 open import RealTheory.AppRational
 open import RealTheory.Completion
@@ -94,8 +95,8 @@ logopVal f val1 val2 =
 evalExp' : {aq : Set} {{araq : AppRational aq}} ->
         Variables (C aq) -> PastResults (C aq) -> Exp -> Either String (Value (C aq))
 evalExp' _ _ (BoolLit b) = Right (VBool b)
-evalExp' _ _ (IntLit i)  = Right (VInt i)
-evalExp' _ _ (RatLit q)  = Right (VRat q)
+evalExp' _ _ (NatLit i)  = Right (VInt (pos i))
+evalExp' _ _ (DecimalLit q)  = Right (VRat (cast q))
 evalExp' _ _ Pi          = Right (VReal pi)
 evalExp' _ _ E           = Right (VReal e)
 evalExp' vars _ (Var name)  =

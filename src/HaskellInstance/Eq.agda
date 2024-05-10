@@ -5,16 +5,20 @@ module HaskellInstance.Eq where
 open import Agda.Builtin.Bool
 open import Haskell.Prim.Bool
 open import Haskell.Prim.Eq
+open import Haskell.Prim using (the)
 
 open import Algebra.SemiRing
 open import Algebra.Ring
 open import Implementation.Int
 open import Implementation.Frac
+open import Implementation.Rational
+open import Implementation.Decimal
 open import Operator.Decidable
+open import Operator.Cast
 open import Shell.Exp hiding (Eq)
 
 {-# FOREIGN AGDA2HS
-import Prelude hiding ((*), negate)
+import Prelude hiding ((*), negate, Rational)
 #-}
 
 instance
@@ -26,11 +30,15 @@ instance
   Eq._==_ eqFrac x y = num x * den y == num y * den x
   {-# COMPILE AGDA2HS eqFrac #-}
 
+  eqDecimal : Eq Decimal
+  Eq._==_ eqDecimal x y = the Rational (cast x) == the Rational (cast y)
+  {-# COMPILE AGDA2HS eqDecimal #-}
+
   iEqExp : Eq Exp
   -- Ouch, so much boilerplate...
   (iEqExp Eq.== BoolLit x) (BoolLit y) = x == y
-  (iEqExp Eq.== IntLit x) (IntLit y) = x == y
-  (iEqExp Eq.== RatLit x) (RatLit y) = x == y
+  (iEqExp Eq.== NatLit x) (NatLit y) = x == y
+  (iEqExp Eq.== DecimalLit x) (DecimalLit y) = x == y
   (iEqExp Eq.== Var x) (Var y) = x == y
   (iEqExp Eq.== History x) (History y) = x == y
   (iEqExp Eq.== Neg x) (Neg y) = x == y
@@ -51,9 +59,5 @@ instance
   (iEqExp Eq.== Sin x) (Sin y) = x == y
   (iEqExp Eq.== Cos x) (Cos y) = x == y
   (iEqExp Eq.== Sqrt x) (Sqrt y) = x == y
-  -- Now some special cases.
-  -- NOTE: this might be incomplete!
-  (iEqExp Eq.== Neg (IntLit x)) (IntLit y) = x == negate y
-  (iEqExp Eq.== IntLit x) (Neg (IntLit y)) = x == negate y
   (iEqExp Eq.== _) _ = false
   {-# COMPILE AGDA2HS iEqExp #-}

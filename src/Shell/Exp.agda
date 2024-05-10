@@ -7,7 +7,7 @@ open import Agda.Builtin.Nat
 open import Agda.Builtin.Int
 open import Haskell.Prim.String
 
-open import Implementation.Rational
+open import Implementation.Decimal
 
 {-# FOREIGN AGDA2HS
 import Prelude hiding (Rational)
@@ -18,8 +18,8 @@ import Prelude hiding (Rational)
 -- the real type
 data Exp : Set where
   BoolLit : Bool -> Exp
-  IntLit : Int -> Exp
-  RatLit : Rational -> Exp
+  NatLit : Nat -> Exp  -- negative integers will be get by negation
+  DecimalLit : Decimal -> Exp
   -- Actually, real literals do not really exist;
   -- as you can only express irrational numbers
   -- with function outputs (maybe nullary, as with e and pi),
