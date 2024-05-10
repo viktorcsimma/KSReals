@@ -42,7 +42,7 @@ runInterruptibly action resultOnInterrupt = do
   -- But it will be removed by the watcher thread
   -- as it will use it at last.
   semaphore <- semOpen sEMAPHORE_NAME
-                       (OpenSemFlags True True)
+                       (OpenSemFlags True False)
                        stdFileMode
                        0
 
