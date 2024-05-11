@@ -47,20 +47,21 @@ On Windows, zlib1.dll can be installed this way:
 - In the shell appearing, type `pacman -S mingw-w64-x86_64-zlib`; this will install the zlib MinGW package.
 - Now you will have `zlib1.dll` under `C:\ghcup\msys64\mingw64\bin`.
 - Copy it into System32.
-On Ubuntu/Debian; it should suffice to say `sudo apt install zlib1g-dev libncurses5-dev`.
+On Ubuntu/Debian, it should suffice to say `sudo apt install zlib1g-dev libncurses5-dev`.
 
 #### agda2hs
 
 Of course, you will need agda2hs.
-Acorn does not get compiled with the vanilla version;
+Acorn does **not** get compiled with the vanilla version;
 _you need a modified one_.
-That is [commit a3c83ad](https://github.com/viktorcsimma/agda2hs/commit/a3c83ad3be876ce0c7aa31157f3107843bf2f465) on my fork.
+It can be found on branch [`have-it-both-ways`](https://github.com/viktorcsimma/agda2hs/commit/a3c83ad3be876ce0c7aa31157f3107843bf2f465) on my fork.
 (But hopefully, these changes will get merged soon.)
 Clone it, check out the commit, then run `cabal install`.
-_(If Cabal hangs on "Building Agda-2.x.x...", you can try pressing Control-C;
-once, it magically proceeded with the installation then.)_
 
-If this is done, add the Cabal binary path
+If Cabal hangs on "Building Agda-2.x.x...", you can try pressing Control-C;
+once, it proceeded with the installation then.
+
+When done, add the Cabal binary path
 (usually `~/.cabal/bin/` on Unix and `C:\cabal\bin\` on Windows)
 to the PATH variable
 so that the command interpreter sees and recognises agda2hs.
@@ -68,91 +69,126 @@ so that the command interpreter sees and recognises agda2hs.
 Lastly, in order to make Agda see the agda2hs standard library,
 add the path to the `agda2hs.agda-lib` file in the project root
 (e.g. `C:\path\to\agda2hs\agda2hs.agda-lib` on Windows)
-to Agda's global library list.
+to the global library list of Agda.
 agda2hs will tell you where it is when you try to run it on `src/All.agda`
 (on Windows, it was `AppData\Roaming\agda\libraries` for me;
-but I had to create the `agda` directory by myself).
+but I had to create the `agda` directory and the file in it by myself).
+It is important that the name is just `libraries`, without any extension –
+some editors might try to add `.txt` after it.
 
 ### Installation methods
 
 On Windows, **before doing anything**,
 issue a `CHCP 65001` command on the cmd you are working on.
-Otherwise, agda2hs won't be able to write Unicode characters
+Otherwise, agda2hs will not be able to write Unicode characters
 into .hs files.
 If you have already run it without the command and it has failed,
-_delete the generated Haskell files_ and only then try again.
+delete the generated Haskell files and only then try again.
 
-For making this changes permanent, see [this tutorial](https://www.scaledeskit.net/post/How-to-set-default-charset-in-Windows-cmd).
+For changing the code page permanently,
+see [this tutorial](https://www.scaledeskit.net/post/How-to-set-default-charset-in-Windows-cmd).
 
 #### Cabal (for use with Haskell packages)
 
 Acorn is a full Cabal package.
-When Cabal is run, the program in Setup.hs compiles the Agda sources
-into the `hs` output directory;
-the normal building process begins only then.
+It can simply be built with `cabal build`
+and installed with `cabal install`
+(the latter also makes the AcornShell executable available
+if you already have agda2hs in PATH).
+For testing, enter `cabal test`;
+that compiles and runs the QuickCheck test functions included.
 
 #### CMake (for use with C and C++ programs)
 
-Ensure (especially on Windows) you have everything needed in your path:
+Ensure (especially on Windows) you have everything needed in your PATH:
 - CMake itself;
 - the generator (Make, Ninja or something similar);
 - GHC;
 - a C compiler.
 
-For now, this has only been tested _on Ubuntu 20.04_.
-But hopefully, I will make it work on Windows too.
-
 For compiling a static library for use in C or C++,
-use CMake:
+use CMake.
+First, generate the scripts of the build system:
 
 ```sh
-cmake -G <your build system> CMakeLists.txt
+cmake CMakeLists.txt
 ```
 
-On Unix, Make is the simplest option for the underlying build system;
-on Windows, I use Ninja.
-Run that build system after this.
+Then, run your build system.
+I use Ninja on Windows
+and Make on Linux.
 
-You might be instructed to install libraries
-("it is a member of the hidden package ...").
-In this case, `cabal install --lib` will help
-(although it's not too elegant).
+After this is done,
+two files will get created in the project root:
+`libAcorn.a` and `AcornShell`/`AcornShell.exe`.
 
 The install command installs the library into a specific folder,
 where it is globally available for all CMake projects.
 With some strings attached.
 
-On Ubuntu 20.04, the only way I could import it was this,
-as CMake could not find it otherwise
-(it forgot the `/usr/local/` from the beginning):
+On Windows, for some reason,
+`Interaction.o` gets corrupted and
+the linker cannot see the symbols exported from `Interaction.agda`
+(even though it does detect symbols of the Haskell runtime).
+Therefore, you have to import `Interaction.o` separately.
 
-```cmake
-include(GNUInstallDirs)
-include(/usr/local/${CMAKE_INSTALL_LIBDIR}/cmake/Acorn/AcornTargets.cmake)
-```
+Another caveat is that you need to pass some specific options to the linker
+(see later),
+in the `CMakeLists.txt` file of the project
+from which you import the library.
+GHC links the Haskell RTS runtimes into the library, so we need not worry about that;
+however, for some reason ld does not find some system libraries by default.
 
-Of course, this is less-than-platform-independent.
+Furthermore, it is essential that the C compiler you use for your client program
+be of a similar version
+as that used by your GHC installation.
+On Linux, this did not pose any problems;
+on Windows, however, I had to install an appropriate version of
+[llvm-mingw](https://github.com/mstorsjo/llvm-mingw/releases)
+(version 14.0.0 for GHC 9.4.8)
+and compile everything with its Clang frontend.
 
-Another caveat is that you need to pass some specific options to the linker.
-GHC links the Haskell RTS runtimes into the library, so we don't need to worry about that;
-however, for some reason ld does not find system libraries by default.
-The winning set for me (on Ubuntu) was this:
-
-```cmake
-target_link_options(calc PRIVATE -fuse-ld=gold -no-pie -fno-PIC -lstdc++ -ltinfo -lrt -lutil -ldl -lpthread -lgmp)
-```
-
-[Here](https://github.com/viktorcsimma/acorn-calc/blob/f9fac926687bf4cad252e3b55de27e62cfd3a9ee/CMakeLists.txt)
+[Here](https://github.com/viktorcsimma/acorn-calc/blob/main/CMakeLists.txt)
 is an example CMakeLists.txt
 for a test application `AcornCalc`
 with source files `src/test.cpp` and `src/ViewModel/HsCalcStateWrapper.cpp`
 and headers in the `include/` folder.
+The relevant code for importing Acorn
+(replace `calc` with the name of your executable):
+
+```cmake
+find_package(Acorn 0.1 REQUIRED)
+
+# For some reason, on Windows, Interaction.o gets corrupted when copied into the library;
+# so it has to be included separately.
+target_link_libraries(calc PRIVATE Acorn::Acorn)
+if("Windows" STREQUAL ${CMAKE_SYSTEM_NAME})
+  target_link_libraries(calc PRIVATE "${CMAKE_INSTALL_PREFIX}/../Acorn/lib/Interaction.o")
+endif()
+
+# I am not sure why, but ld cannot detect some system libraries by itself;
+# so they need to be named explicitly.
+if("Linux" STREQUAL ${CMAKE_SYSTEM_NAME} OR "Darwin" STREQUAL ${CMAKE_SYSTEM_NAME})
+  target_link_options(calc PRIVATE -no-pie)
+  target_link_libraries(calc PRIVATE dl pthread gmp)
+  if(CMAKE_BUILD_TYPE MATCHES RELEASE)
+      # we tell the dynamic linker to search for shared libraries in the folder of the executable itself
+      # this way, we can bundle the remaining libraries with the application
+      target_link_options(calc PRIVATE -rpath=.)
+  endif()
+elseif("Windows" STREQUAL ${CMAKE_SYSTEM_NAME})
+  target_link_options(calc PRIVATE -pthread -fno-PIC)
+  target_link_libraries(calc PRIVATE ntdll rpcrt4 dbghelp ucrt msvcrt ws2_32 ucrt winmm)
+else()
+  message( FATAL_ERROR "Unsupported operating system: ${CMAKE_SYSTEM_NAME}" )
+endif()
+```
 
 ## Documentation
 
 So far, a real documentation does not really exist.
 The most detailed description about the library for now
-is [this article](http://csimmaviktor.web.elte.hu/acorn.pdf)
+is [this article](http://csimmaviktor.web.elte.hu/acorn.pdf).
 But feel free to ask if you have questions.
 
 ## Contribution
