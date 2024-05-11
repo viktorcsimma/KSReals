@@ -47,7 +47,7 @@ install(FILES include/TinyHsFFI.h include/Acorn.h DESTINATION ${CMAKE_INSTALL_IN
 # For some reason, on Windows, Interaction.o gets corrupted when copied into the library;
 # so it has to be included separately.
 # It can be imported like this:
-# target_link_libraries(calc PRIVATE "C:/Program Files (x86)/Acorn/lib/Interaction.o")
+# target_link_libraries(calc PRIVATE "${CMAKE_INSTALL_PREFIX}/../Acorn/lib/Interaction.o")
 # (not too elegant, but it works).
 # See my own question at
 # https://stackoverflow.com/questions/78260754/ghc-staticlib-with-ffi-on-windows-tries-to-link-an-executable-with-foreign-ex/78261321#78261321.
