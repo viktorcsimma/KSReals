@@ -111,10 +111,12 @@ use CMake.
 First, generate the scripts of the build system:
 
 ```sh
-cmake CMakeLists.txt
+cmake -G <the_build_system_of_your_choice> CMakeLists.txt
 ```
 
-Then, run your build system.
+Then, run your build system:
+first build the library as a normal user,
+then install it as a superuser.
 I use Ninja on Windows
 and Make on Linux.
 
