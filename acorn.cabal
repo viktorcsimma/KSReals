@@ -8,7 +8,6 @@ description:
 -- Ouch... these need to be listed.
 extra-source-files:  acorn.agda-lib,
                      src/All.agda,
-                     src/TestMain.agda,
                      src/Algebra/*.agda,
                      src/Function/*.agda,
                      src/HaskellInstance/*.agda,
@@ -18,6 +17,8 @@ extra-source-files:  acorn.agda-lib,
                      src/RealTheory/Instance/*.agda,
                      src/Shell/*.agda,
                      src/Shell/Platform/*.agda,
+                     src/Test/*.agda,
+                     src/Test/Haskell/*.agda,
                      src/Tool/*.agda
 
 custom-setup
@@ -174,4 +175,3 @@ test-suite AcornQuickCheck
                        acorn,
                        QuickCheck >= 2.14
   default-language:    GHC2021
-  
